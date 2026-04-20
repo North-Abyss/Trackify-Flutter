@@ -9,12 +9,11 @@ void main() {
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
-  @override
+  @override 
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false, // Bonus: removes the 'Debug' banner!
-      title: 'Trackify',
-      home: DashboardScreen(), 
+      title: 'Trackify', home: DashboardScreen(), 
     );
   }
 }

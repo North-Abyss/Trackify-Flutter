@@ -24,6 +24,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(title: const Text('Trackify Dashboard')),
+      
       body: ListView.builder(
         itemCount: myHabits.length,
         itemBuilder: (context, index) {
@@ -41,6 +42,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         },
       ),
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // This tells Flutter: "Data is changing, redraw the screen!"
+          setState(() {
+            // Standard Dart list addition
+            myHabits.add({
+              "name": "Drink Coffee ☕", 
+              "completed": false
+            });
+          });
+        },
+        backgroundColor: Colors.blueAccent,
+        child: const Icon(Icons.add), // A built-in Material plus icon!
+      ),
+
     );
     }
 }
