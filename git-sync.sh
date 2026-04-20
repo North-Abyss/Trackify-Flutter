@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Git Sync Script
+# Git Commit & Sync Script
 # Syncs local repository with remote
 
 set -e
@@ -11,6 +11,15 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}Starting git sync...${NC}"
+
+# Stage all changes
+echo -e "${BLUE}Staging changes...${NC}"
+git add .
+
+# Commit changes
+echo -e "${BLUE}Committing changes...${NC}"
+read -p "Enter commit message: " commit_message
+git commit -m "$commit_message" || echo "No changes to commit"
 
 # Fetch latest changes from remote
 echo -e "${BLUE}Fetching from remote...${NC}"
