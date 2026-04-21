@@ -5,7 +5,6 @@ import '../widgets/habit_card.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
-
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
@@ -17,7 +16,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     {"name": "Workout for 30 Mins", "completed": false},
     {"name": "Meditate", "completed": true},
   ];
-
+  final TextEditingController _habitController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -45,19 +44,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // This tells Flutter: "Data is changing, redraw the screen!"
-          setState(() {
-            // Standard Dart list addition
-            myHabits.add({
-              "name": "Drink Coffee ☕", 
-              "completed": false
-            });
-          });
+          // 1. Pop up in center !
+          showBottomSheet(
+            context: context,
+            builder: (context) {
+              return Padding(
+                // Padding so it doesn't hug the edges
+                padding: const EdgeInsets.all(20.0), 
+                child: Column(
+                  children: [
+                    // 2. The Text Field (Bind it to our controller!)
+                    TextField(
+                      controller: _habitController,
+                      decoration: const InputDecoration(
+                        labelText: 'Enter new habit',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 20), // A little spacing
+                    
+                    // 3. The Save Button
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          myHabits.add({
+                            "name": _habitController.text, "completed": false
+                          });
+                        });
+                        
+                        // 4. Clear the text field for next time
+                        _habitController.clear(); 
+                        
+                        // 5. Close the bottom sheet (finish/dismiss)
+                        Navigator.pop(context); 
+                      },
+                      child: const Text('Save Habit'),
+                    )
+                  ],
+                ),
+              );
+            }
+          );
         },
         backgroundColor: Colors.blueAccent,
-        child: const Icon(Icons.add), // A built-in Material plus icon!
+        child: const Icon(Icons.add),
       ),
-
     );
     }
 }
