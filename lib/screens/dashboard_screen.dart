@@ -44,8 +44,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // 1. Pop up in center !
-          showBottomSheet(
+
+          showModalBottomSheet(
             context: context,
             builder: (context) {
               return Padding(
@@ -53,29 +53,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.all(20.0), 
                 child: Column(
                   children: [
-                    // 2. The Text Field (Bind it to our controller!)
                     TextField(
                       controller: _habitController,
                       decoration: const InputDecoration(
-                        labelText: 'Enter new habit',
-                        border: OutlineInputBorder(),
+                        labelText: 'Enter new habit', border: OutlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 20), // A little spacing
                     
-                    // 3. The Save Button
                     ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          myHabits.add({
-                            "name": _habitController.text, "completed": false
-                          });
+                          myHabits.add({ "name": _habitController.text, "completed": false });
                         });
                         
-                        // 4. Clear the text field for next time
                         _habitController.clear(); 
-                        
-                        // 5. Close the bottom sheet (finish/dismiss)
                         Navigator.pop(context); 
                       },
                       child: const Text('Save Habit'),
