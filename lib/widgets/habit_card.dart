@@ -14,6 +14,7 @@ class HabitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       margin: const EdgeInsets.all(12.0),
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(

@@ -1,6 +1,7 @@
 //dashboard_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../widgets/habit_card.dart'; 
 
 class DashboardScreen extends StatefulWidget {
@@ -9,12 +10,13 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
+const uuid = Uuid();
 class _DashboardScreenState extends State<DashboardScreen> {
     final List<Map<String, dynamic>> myHabits = [
-    {"name": "Drink 2L Water", "completed": true},
-    {"name": "Read 10 Pages", "completed": false},
-    {"name": "Workout for 30 Mins", "completed": false},
-    {"name": "Meditate", "completed": true},
+    {"id": uuid.v4(),"name": "Drink 2L Water", "completed": true},
+    {"id": uuid.v4(),"name": "Workout for 30 Mins", "completed": false},
+    {"id": uuid.v4(),"name": "Meditate", "completed": true},
+    {"id": uuid.v4(),"name": "Read 10 Pages", "completed": false},
   ];
   final TextEditingController _habitController = TextEditingController();
 
@@ -30,12 +32,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final habit = myHabits[index];
           
           return Dismissible(
-            key: Key(habit["name"]), 
+            key: Key(habit["id"]), 
+
+            direction: DismissDirection.startToEnd, 
+            dismissThresholds: const { DismissDirection.startToEnd: 0.5 },
             
             background: Container(
               color: Colors.red,
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 20.0),
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.only(left: 20.0),
               child: const Icon(Icons.delete, color: Colors.white),
             ),
             
@@ -87,7 +92,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          myHabits.add({ "name": _habitController.text, "completed": false });
+                          myHabits.add({ "id": uuid.v4(),"name": _habitController.text, "completed": false });
                         });
                         
                         _habitController.clear(); 
