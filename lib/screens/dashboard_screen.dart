@@ -29,14 +29,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
         itemBuilder: (context, index) {
           final habit = myHabits[index];
           
-          return GestureDetector(//button functionality: toggles completion status on tap
-            onTap: () {
+          return Dismissible(
+            key: Key(habit["name"]), 
+            
+            background: Container(
+              color: Colors.red,
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20.0),
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            
+            // The logic to execute when swiped off screen
+            onDismissed: (direction) {
               setState(() {
-                myHabits[index]["completed"] = !myHabits[index]["completed"];
+                myHabits.removeAt(index); // Remove it from the Dart List!
               });
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('${habit["name"]} deleted')),
+              );
             },
-            child: HabitCard(
-              title: habit["name"], isCompleted: habit["completed"],
+            
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  myHabits[index]["completed"] = !myHabits[index]["completed"];
+                });
+              },
+              child: HabitCard(
+                title: habit["name"], 
+                isCompleted: habit["completed"],
+              ),
             ),
           );
         },
