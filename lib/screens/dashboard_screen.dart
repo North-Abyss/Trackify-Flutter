@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert'; // For JSON encoding/decoding
 import '../models/habit.dart';
 import '../widgets/habit_card.dart'; 
+import 'habit_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -33,7 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final List<dynamic> decoded = jsonDecode(habitsString);
       setState(() {
         // Convert the JSON list back into Habit objects!
-        myHabits = decoded.map((item) => Habit.fromJson(item)).toList();
+        myHabits = decoded.map((item) => Habit.fromjson(item)).toList();
       });
     }
   }
@@ -88,6 +89,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 });
                 _saveHabits();
               },
+
+              onLongPress: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    // Pass the habit object directly. No Parcelable needed!
+                    builder: (context) => HabitDetailScreen(habit: habit),
+                  ),
+                );
+              },
+
               child: HabitCard(
                 title: habit.name, 
                 isCompleted: habit.completed,

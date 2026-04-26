@@ -19,7 +19,7 @@ class Habit {
   }
 
   // Unpack from a Map (coming from JSON)
-  factory Habit.fromJson(Map<String, dynamic> json) {
+  factory Habit.fromjson(Map<String, dynamic> json) {
     return Habit(
       id:json['id'], name:json['name'], completed:json['completed'],
     );
