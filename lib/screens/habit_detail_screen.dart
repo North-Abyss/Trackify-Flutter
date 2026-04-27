@@ -19,8 +19,7 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill the text field with the current habit name
-    _editController = TextEditingController(text: widget.habit.name);
+    _editController = TextEditingController(text: widget.habit.name); // Pre-fill the text field with the current habit name
   }
 
   @override
@@ -34,15 +33,13 @@ class _HabitDetailScreenState extends State<HabitDetailScreen> {
             TextField(
               controller: _editController,
               decoration: const InputDecoration(
-                labelText: 'Habit Name',
-                border: OutlineInputBorder(),
+                labelText: 'Habit Name', border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                // Return the updated text back to the previous screen!
-                Navigator.pop(context, _editController.text);
+                Navigator.pop(context, _editController.text); // Return the updated text back to the previous screen!
               },
               child: const Text('Save Changes'),
             )
