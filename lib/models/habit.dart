@@ -2,7 +2,7 @@
 
 class Habit {
   final String id;
-  final String name;
+  String name;
   bool completed;
 
   Habit({

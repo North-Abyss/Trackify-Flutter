@@ -3,32 +3,49 @@
 import 'package:flutter/material.dart';
 import '../models/habit.dart';
 
-class HabitDetailScreen extends StatelessWidget {
 
+// Upgraded to StatefulWidget to hold a TextField!
+class HabitDetailScreen extends StatefulWidget {
   final Habit habit;
   const HabitDetailScreen({super.key, required this.habit});
 
   @override
+  State<HabitDetailScreen> createState() => _HabitDetailScreenState();
+}
+
+class _HabitDetailScreenState extends State<HabitDetailScreen> {
+  late TextEditingController _editController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill the text field with the current habit name
+    _editController = TextEditingController(text: widget.habit.name);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
-      // Use the habit's name dynamically in the AppBar!
-      appBar: AppBar(
-        title: Text('${habit.name} Details'), backgroundColor: Colors.blueAccent,
-      ),
-      body: Center(
+      appBar: AppBar(title: const Text('Edit Habit')),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Habit: ${habit.name}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Status: ${habit.completed ? "Completed ✅" : "Pending ⏳"}', style: const TextStyle(fontSize: 18),
+            TextField(
+              controller: _editController,
+              decoration: const InputDecoration(
+                labelText: 'Habit Name',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 20),
-            const Text('Future statistics will go here!'),
+            ElevatedButton(
+              onPressed: () {
+                // Return the updated text back to the previous screen!
+                Navigator.pop(context, _editController.text);
+              },
+              child: const Text('Save Changes'),
+            )
           ],
         ),
       ),

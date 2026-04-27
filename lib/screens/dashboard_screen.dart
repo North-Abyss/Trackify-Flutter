@@ -90,14 +90,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _saveHabits();
               },
 
-              onLongPress: () {
-                Navigator.push(
+              onLongPress: () async { // <-- 1. Add 'async' here
+                
+                // 2. AWAIT the result of the navigation!
+                final String? updatedName = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    // Pass the habit object directly. No Parcelable needed!
                     builder: (context) => HabitDetailScreen(habit: habit),
                   ),
                 );
+
+                // 3. If the user hit 'Save' (and didn't just hit the back button)
+                if (updatedName != null && updatedName.isNotEmpty) {
+                  setState(() {
+                    myHabits[index].name = updatedName; // Update the POJO
+                  });
+                  _saveHabits(); // Save to the hard drive
+                }
               },
 
               child: HabitCard(
