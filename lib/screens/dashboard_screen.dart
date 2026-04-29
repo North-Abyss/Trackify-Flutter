@@ -5,7 +5,9 @@ import 'package:uuid/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert'; // For JSON encoding/decoding
 import '../models/habit.dart';
-import '../widgets/habit_card.dart'; 
+import '../widgets/habit_card.dart';
+import 'package:provider/provider.dart'; // Import Provider
+import '../providers/habit_provider.dart'; // Import your new manager
 import 'habit_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -39,16 +41,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  // 4. The Save Logic
-  Future<void> _saveHabits() async {
-    final prefs = await SharedPreferences.getInstance();
-    // Convert Habit objects to Maps, then to a JSON String!
-    final String encoded = jsonEncode(myHabits.map((h) => h.toMap()).toList());
-    await prefs.setString('saved_habits', encoded);
-  }
 
   @override
   Widget build(BuildContext context) {
+    // WATCH THE STATE: This tells the UI to rebuild anytime notifyListeners() is called!
+    final habitProvider = context.watch<HabitProvider>();
+    final myHabits = habitProvider.habits; // Grab the list from the provider
+
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(title: const Text('Trackify Dashboard')),
@@ -73,26 +72,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             
             // The logic to execute when swiped off screen
             onDismissed: (direction) {
-              setState(() {
-                myHabits.removeAt(index); // Remove it from the Dart List!
-              });
-              _saveHabits();
+              context.read<HabitProvider>().deleteHabit(index);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('${habit.name} deleted')),
               );
             },
             
             child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  myHabits[index].completed = !myHabits[index].completed;
-                });
-                _saveHabits();
-              },
+              onTap: () { context.read<HabitProvider>().toggleHabit(index); },
 
-              onLongPress: () async { // <-- 1. Add 'async' here
+              onLongPress: () async {
                 
-                // 2. AWAIT the result of the navigation!
                 final String? updatedName = await Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -100,63 +90,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 );
 
-                // 3. If the user hit 'Save' (and didn't just hit the back button)
                 if (updatedName != null && updatedName.isNotEmpty) {
-                  setState(() {
-                    myHabits[index].name = updatedName; // Update the POJO
-                  });
-                  _saveHabits(); // Save to the hard drive
+                  context.read<HabitProvider>().editHabitName(index, updatedName);                
                 }
               },
 
-              child: HabitCard(
-                title: habit.name, 
-                isCompleted: habit.completed,
-              ),
+              child: HabitCard( title: habit.name, isCompleted: habit.completed, ),
             ),
           );
         },
       ),
 
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.blueAccent,
+        child: const Icon(Icons.add),
         onPressed: () {
+          _habitController.clear();
 
-          showModalBottomSheet(
+          showDialog(
             context: context,
             builder: (context) {
-              return Padding(
-                // Padding so it doesn't hug the edges
-                padding: const EdgeInsets.all(20.0), 
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _habitController,
-                      decoration: const InputDecoration(
-                        labelText: 'Enter new habit', border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 20), // A little spacing
-                    
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          myHabits.add(Habit(id: uuid.v4(),name: _habitController.text)); 
-                        });
-                        _saveHabits();
-                        _habitController.clear(); 
-                        Navigator.pop(context); 
-                      },
-                      child: const Text('Save Habit'),
-                    )
-                  ],
+              return AlertDialog(
+                
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20.0),
+                ),                
+                title: const Text('Create New Habit'),
+                content: TextField(
+                  controller: _habitController,
+                  autofocus: true, // Boom! Cursor appears instantly without tapping.
+                  decoration: const InputDecoration(
+                    hintText: 'e.g., Code in Flutter', border: OutlineInputBorder(),
+                  ),
+
+                  // THE KEYBOARD SHORTCUT (Pressing Enter)
+                  onSubmitted: (value) {
+                    if (value.isNotEmpty) {
+                      // Trigger the Provider and close the HUD!
+                      context.read<HabitProvider>().addHabit(value);
+                      Navigator.pop(context); 
+                    }
+                  },
                 ),
+
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context), // Cancel
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_habitController.text.isNotEmpty) {
+                        context.read<HabitProvider>().addHabit(_habitController.text);
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
+                
               );
             }
           );
+
         },
-        backgroundColor: Colors.blueAccent,
-        child: const Icon(Icons.add),
       ),
+    
     );
     }
 }
