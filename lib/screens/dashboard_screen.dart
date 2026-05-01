@@ -5,6 +5,8 @@ import 'package:uuid/uuid.dart';
 //import 'package:shared_preferences/shared_preferences.dart';
 //import 'dart:convert'; // For JSON encoding/decoding
 //import '../models/habit.dart';
+import 'profile_screen.dart';
+import 'settings_screen.dart';
 import '../widgets/habit_card.dart';
 import 'package:provider/provider.dart'; // Import Provider
 import '../providers/habit_provider.dart'; // Import your new manager
@@ -98,8 +100,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
           autofocus: true,
         child: Scaffold(
           backgroundColor: Colors.grey[200],
-          appBar: AppBar(title: const Text('Trackify Dashboard')),
-          
+          appBar: AppBar(
+            title: const Text('Trackify Dashboard'),
+            actions: [
+              // 1. Profile Button
+              IconButton(
+                icon: const Icon(Icons.person),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                  );
+                },
+              ),
+              // 2. Settings Button
+              IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  );
+                },
+              ),
+            ],
+          ),
+
           body: ListView.builder(
             itemCount: myHabits.length,
             itemBuilder: (context, index) {
