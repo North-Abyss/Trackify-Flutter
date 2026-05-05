@@ -13,17 +13,28 @@ class HabitCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(12.0),
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
-        color: isCompleted ? Colors.green : Colors.blueGrey,
+        // Instead of a hardcoded color, ask the Global Theme for its primary container color!
+        color: isCompleted 
+          ? Theme.of(context).colorScheme.primary // The main theme color (e.g., solid blue)
+          : Theme.of(context).colorScheme.surfaceContainerHighest, // A nice neutral grey/tinted background
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Text(
         title,
-        style: const TextStyle(color: Colors.white, fontSize: 18),
+        style: TextStyle(
+          fontSize: 18.0,
+          fontWeight: FontWeight.w600,
+          //Dynamic Text Colors!
+          color: isCompleted ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
+          //decoration: isCompleted ? TextDecoration.lineThrough : null,
+        ),
       ),
     );
   }
