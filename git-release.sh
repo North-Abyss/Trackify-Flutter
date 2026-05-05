@@ -18,6 +18,22 @@ flutter build apk --release
 echo "Building Linux Native App..."
 flutter build linux --release
 
+# Build for Web (optional, uncomment if needed)
+# echo "Building Web App..."
+# flutter build web --release
+
+# Build for Windows (optional, uncomment if needed)
+# echo "Building Windows Native App..."
+# flutter build windows --release
+
+# Build for macOS (optional, uncomment if needed)
+# echo "Building macOS Native App..."
+# flutter build macos --release
+
+# Build for iOS (optional, uncomment if needed)
+# echo "Building iOS App..."
+# flutter build ios --release
+
 # 1. Stage and commit any lingering changes (including any updated build files if tracked)
 git add .
 git commit -m "chore: prepare for release $version and generate builds"
