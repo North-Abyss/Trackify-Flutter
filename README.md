@@ -80,6 +80,33 @@ flutter pub get
 flutter run
 ```
 
+### Web Development
+
+For web-specific development and testing:
+
+#### Local Development Server
+```bash
+# Run on Chrome with custom port
+flutter run -d chrome --web-port=8080
+
+# Run on default browser
+flutter run -d web-server
+
+# Run on specific browser
+flutter run -d edge
+flutter run -d safari
+```
+
+#### Web Build and Serve
+```bash
+# Build for web
+flutter build web
+
+# Serve locally (requires web server)
+cd build/web && python3 -m http.server 8000
+# Or use any static file server
+```
+
 ### Building
 
 For production builds:
