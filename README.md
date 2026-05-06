@@ -2,6 +2,8 @@
 
 A Flutter habit-tracking application built as a learning project during the 100 Days of Code challenge. Trackify helps users build and maintain positive habits by providing a clean, intuitive interface to track daily habit completion.
 
+![Social preview](assets/social%20preview.png)
+
 ## 📱 Features
 
 - **Habit Dashboard** - View all your habits in one beautiful dashboard
