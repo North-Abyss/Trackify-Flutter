@@ -1,7 +1,7 @@
 {
-  "themeName": "Ocean Blue",
-  "primary": "#0D47A1",
-  "background": "#E3F2FD",
-  "card": "#BBDEFB",
+  "themeName": "Test",
+  "primary": "#61d679",
+  "background": "#65b3e7",
+  "card": "#77e787",
   "text": "#000000"
 }

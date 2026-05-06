@@ -25,7 +25,12 @@ class MainApp extends StatelessWidget {
           return MaterialApp(
             debugShowCheckedModeBanner: false, // Bonus: removes the 'Debug' banner!
             title: 'Trackify', 
-            theme: context.watch<ThemeProvider>().currentTheme,
+            
+            // Flutter natively handles the switching now!
+            theme: context.watch<ThemeProvider>().lightTheme, 
+            darkTheme: context.watch<ThemeProvider>().darkTheme,
+            themeMode: context.watch<ThemeProvider>().themeMode,
+            
             home: DashboardScreen(), 
           );
         },
