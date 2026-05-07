@@ -4,6 +4,7 @@ import 'package:provider/provider.dart'; // Import Provider
 import 'providers/habit_provider.dart'; // Import your new manager
 import 'providers/theme_provider.dart'; // Import your new ThemeProvider!
 import 'screens/dashboard_screen.dart';
+import 'providers/user_provider.dart'; // Import Profile Manager
 
 void main() {
   runApp(const MainApp());
@@ -18,7 +19,8 @@ class MainApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => HabitProvider()),
-        ChangeNotifierProvider(create: (context) => ThemeProvider()), // Inject it here!
+        ChangeNotifierProvider(create: (context) => ThemeProvider()), // Theme
+        ChangeNotifierProvider(create: (_) => UserProvider()), // Profile
       ],
       child: Builder(
         builder: (context) {
