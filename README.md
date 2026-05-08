@@ -1,6 +1,6 @@
 # Trackify 
 
-A Flutter habit-tracking application built as a learning project during the 100 Days of Code challenge. Trackify helps users build and maintain positive habits by providing a clean, intuitive interface to track daily habit completion.
+A Flutter habit-tracking application built as a learning project during the **100 Days of Code challenge**. Trackify helps users build and maintain positive habits by providing a clean, intuitive interface to track daily habit completion. It includes a powerful gamified global timer engine that manages state seamlessly.
 
 ![Social preview](assets/social%20preview.png)
 
@@ -204,6 +204,13 @@ This project demonstrates:
 - ✅ Material Design principles
 - ✅ Null safety in Dart
 - ✅ CRUD operations in Flutter
+
+## 📝 Recent Updates (Day 24)
+
+- **Highlander Global Timer**: Re-engineered timer architecture so that only one timer runs at a time globally to optimize memory overhead.
+- **Power-Glow UX**: Gamified the habit timer UI. When a timer starts, it immediately enters a "completed" glowing state and strips the timer upon hitting zero.
+- **Strict Parameter Management**: Enforced typed `String id` lookups across all models, fully deleting dynamic type leaks.
+- **Automated Trackify Release Pipeline**: Custom `git-sync.sh` and `git-release.sh` shell scripts to auto-generate builds named `Trackify-*`.
 
 ## 📝 Future Enhancements
 

@@ -159,25 +159,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     },
                     
                     child: GestureDetector(
-                      onTap: () { context.read<HabitProvider>().toggleHabit(index); },
+                      onTap: () { context.read<HabitProvider>().toggleHabit(habit.id); },
 
                       onLongPress: () async {
                         
-                        final String? updatedName = await Navigator.push(
+                        final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => HabitDetailScreen(habit: habit),
                           ),
                         );
+
                         // If the widget was destroyed while we were waiting, stop executing!
                         if (!context.mounted) return;
-                        // Now it is 100% safe to use the context.
-                        if (updatedName != null && updatedName.isNotEmpty) {
-                          context.read<HabitProvider>().editHabitName(index, updatedName);                
+                        
+                        // Handle the result which is now a Map with 'name' and 'seconds'
+                        if (result != null && result is Map<String, dynamic>) {
+                          final String? updatedName = result['name'];
+                          final int? updatedSeconds = result['seconds'];
+                          if (updatedName != null && updatedName.isNotEmpty) {
+                            context.read<HabitProvider>().editHabitName(habit.id, updatedName);
+                          }
+                          if (updatedSeconds != null) {
+                            context.read<HabitProvider>().editHabitDuration(habit.id, updatedSeconds);
+                          }
                         }
                       },
 
-                      child: HabitCard( title: habit.name, isCompleted: habit.completed, ),
+                      child: HabitCard(habit: habit), // Pass the whole habit object to the card!
                     ),
                   );
                 },

@@ -150,7 +150,8 @@ gh release create "$version" \
 if [ "$upload_only" = true ] || [ "$build_android" = true ]; then
     if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
         echo "Uploading Android APK..."
-        gh release upload "$version" "build/app/outputs/flutter-apk/app-release.apk" \
+        cp "build/app/outputs/flutter-apk/app-release.apk" "build/app/outputs/flutter-apk/Trackify-Android.apk"
+        gh release upload "$version" "build/app/outputs/flutter-apk/Trackify-Android.apk" \
             --repo North-Abyss/Trackify-Flutter --clobber
     else
         echo "⚠️  Android APK not found at build/app/outputs/flutter-apk/app-release.apk"
@@ -221,7 +222,7 @@ else
 fi
 echo "🔗 View release at: https://github.com/North-Abyss/Trackify-Flutter/releases/tag/$version"
 echo "📋 Uploaded assets:"
-[ -f "build/app/outputs/flutter-apk/app-release.apk" ] && echo "   ✓ Android: app-release.apk"
+[ -f "build/app/outputs/flutter-apk/app-release.apk" ] && echo "   ✓ Android: Trackify-Android.apk"
 [ -d "build/linux/x64/release/bundle/" ] && echo "   ✓ Linux: trackify-linux-x64.tar.gz"
 [ -d "build/web" ] && echo "   ✓ Web: trackify-web.tar.gz"
 [ -d "build/windows/x64/runner/Release/" ] && echo "   ✓ Windows: trackify-windows-x64.zip"
