@@ -1,8 +1,8 @@
 // habit_card.dart
 import 'package:flutter/material.dart';
 import '../models/habit.dart'; // Import the model
-import 'package:provider/provider.dart';
-import '../providers/habit_provider.dart';
+//import 'package:provider/provider.dart';
+//import '../providers/habit_provider.dart';
 
 class HabitCard extends StatelessWidget {
   final Habit habit; 
