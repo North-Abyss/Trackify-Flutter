@@ -1,55 +1,61 @@
-// habit_card.dart
+// lib/widgets/habit_card.dart
 import 'package:flutter/material.dart';
-import '../models/habit.dart'; // Import the model
-//import 'package:provider/provider.dart';
-//import '../providers/habit_provider.dart';
+import 'package:provider/provider.dart';
+import '../models/habit.dart';
+import '../providers/habit_provider.dart';
 
 class HabitCard extends StatelessWidget {
   final Habit habit; 
 
-  const HabitCard({
-    super.key, 
-    required this.habit,
-  });
+  const HabitCard({super.key, required this.habit});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final provider = context.watch<HabitProvider>(); 
+    
+    // Check if this specific habit is cooling down
+    final isCoolingDown = habit.cooldownEndTime != null;
+
+    String formatSeconds(int seconds) {
+      final d = Duration(seconds: seconds);
+      String two(int n) => n.toString().padLeft(2, '0');
+      final h = d.inHours;
+      final m = d.inMinutes.remainder(60);
+      final s = d.inSeconds.remainder(60);
+      if (h > 0) return '${two(h)}:${two(m)}:${two(s)}';
+      return '${two(m)}:${two(s)}';
+    }
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(12.0),
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
-        // Instead of a hardcoded color, ask the Global Theme for its primary container color!
-        color: habit.completed 
-          ? Theme.of(context).colorScheme.primary // The main theme color (e.g., solid blue)
-          : Theme.of(context).colorScheme.surfaceContainerHighest, // A nice neutral grey/tinted background
+        color: habit.completed ? colorScheme.primary : colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8.0),
       ),
-      
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // The Text (Wrapped in Expanded so it doesn't push the timer off screen)
           Expanded(
             child: Text(
               habit.name,
               style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.w600,
+                fontSize: 18.0, fontWeight: FontWeight.w600,
                 color: habit.completed ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
               ),
             ),
           ),
-
-          // THE NEW TIMER UI
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (habit.targetDurationSeconds > 0) ...[
                 Text(
-                  habit.formattedTimer,
+                  // Show live countdown if cooling down, otherwise show target time!
+                  isCoolingDown 
+                      ? formatSeconds(provider.getRemainingSeconds(habit)) 
+                      : formatSeconds(habit.targetDurationSeconds),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: habit.completed ? colorScheme.onPrimary : colorScheme.primary,
@@ -63,7 +69,6 @@ class HabitCard extends StatelessWidget {
           ),
         ],
       )
-
     );
   }
 }

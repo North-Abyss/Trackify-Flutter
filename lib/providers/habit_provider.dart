@@ -2,148 +2,168 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'dart:async'; // REQUIRED FOR TIMERS!
+import 'dart:async'; 
 import '../models/habit.dart';
 import 'package:uuid/uuid.dart';
 
 class HabitProvider extends ChangeNotifier {
-  List<Habit> _habits = []; final Uuid _uuid = const Uuid();
+  List<Habit> _habits = []; 
+  final Uuid _uuid = const Uuid();
+  Timer? _globalTimer;
 
-  List<Habit> get habits => _habits;  // Getter so the UI can read the habits
-  HabitProvider() { loadHabits(); } // Load automatically when the app starts!
+  List<Habit> get habits => _habits;  
+  HabitProvider() { loadHabits(); } 
 
-  // The Global Heartbeat Timer
-  Timer? _globalTicker;
-
-  // Add this inside editHabitDuration so changing the duration resets the remaining time:
-  // _habits[index].targetDurationSeconds = newDuration;
-  // _habits[index].remainingSeconds = newDuration; <--- ADD THIS TO YOUR EDIT METHOD!
+  // ==========================================
+  // THE UNIVERSAL HEARTBEAT ENGINE
+  // ==========================================
   
-  // CREATE
-  void addHabit(String name) {
-    _habits.add(Habit(id: _uuid.v4(), name: name));
-    saveHabits(); notifyListeners(); // <--- Tells the UI to update!
-  }
+  void _startUniversalTicker() {
+    // Only start if not already running
+    if (_globalTimer != null && _globalTimer!.isActive) return;
 
-  void _startGlobalTicker() {
-    // If the timer is already ticking, don't start a second one!
-    if (_globalTicker != null && _globalTicker!.isActive) return;
-
-    _globalTicker = Timer.periodic(const Duration(seconds: 1), (timer) {
-      bool anyRunning = false;
+    _globalTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      bool anyCoolingDown = false;
       bool changesMade = false;
+      final now = DateTime.now();
 
       for (var habit in _habits) {
-        if (habit.completed && habit.targetDurationSeconds > 0) {
-          anyRunning = true;
-          changesMade = true;
-
-          if (habit.remainingSeconds > 0) {
-            habit.remainingSeconds--; // Tick down!
-          } else {
-            // TIMER HIT ZERO!
-            habit.completed = false; // "turn off or incompleted state"
-            habit.targetDurationSeconds = 0; // "returns to no timer"
-            habit.remainingSeconds = 0;
+        if (habit.cooldownEndTime != null) {
+          anyCoolingDown = true;
+          
+          // Did this specific habit finish its cooldown?
+          if (now.isAfter(habit.cooldownEndTime!)) {
+            habit.cooldownEndTime = null; // Clear the timer
+            habit.completed = false; // UNCHECK it so they can do it again!
+            changesMade = true;
           }
         }
       }
 
-      if (changesMade) notifyListeners();
-
-      // If no habits are currently playing, cancel the timer to save battery!
-      if (!anyRunning) {
+      // Always redraw UI if timers are running so the seconds tick down visually
+      if (anyCoolingDown) {
+        notifyListeners(); 
+      } else {
+        // If NO habits are cooling down, kill the heartbeat to save battery!
         timer.cancel();
-        saveHabits(); // Save progress to hard drive when timer stops
       }
+
+      if (changesMade) saveHabits();
     });
   }
 
-  // UPDATE (Toggle)
+  // Helper to get remaining seconds for a specific habit
+  int getRemainingSeconds(Habit habit) {
+    if (habit.cooldownEndTime == null) return 0;
+    final remaining = habit.cooldownEndTime!.difference(DateTime.now()).inSeconds;
+    return remaining > 0 ? remaining : 0;
+  }
+
+  // ==========================================
+  // HABIT CRUD
+  // ==========================================
+  
   void toggleHabit(String id) {
     final index = _habits.indexWhere((h) => h.id == id);
     if (index == -1) return;
-
     var habit = _habits[index];
 
-    // If it's a timer habit, tapping it toggles the timer instead of instant completion
     if (habit.targetDurationSeconds > 0) {
-      // Only one timer running at a time
-      for (var h in _habits) {
-        if (h.targetDurationSeconds > 0 && h.id != habit.id) {
-          h.completed = false;
-        }
-      }
-
-      habit.completed = !habit.completed;
-
-      if (habit.completed) {
-        _startGlobalTicker();
+      // --- COOLDOWN HABIT ---
+      if (habit.cooldownEndTime != null) {
+        // Tapped while cooling down -> Cancel the timer early
+        habit.cooldownEndTime = null;
+        habit.completed = false;
       } else {
-        saveHabits();
+        // Drink Water -> Check it off -> Start cooldown
+        habit.completed = true;
+        habit.lastCompletedDate = DateTime.now();
+        habit.currentStreak += 1;
+        habit.cooldownEndTime = DateTime.now().add(Duration(seconds: habit.targetDurationSeconds));
+        _startUniversalTicker(); // Ensure heartbeat is running
       }
     } else {
-      // Normal habit instant completion
+      // --- NORMAL HABIT ---
       habit.completed = !habit.completed;
       if (habit.completed) {
         habit.lastCompletedDate = DateTime.now();
         habit.currentStreak += 1; 
       }
-      saveHabits();
     }
+    
+    saveHabits();
     notifyListeners();
   }
 
-  // UPDATE (Edit Name)
-  void editHabitName(String id, String newName) {
-    final index = _habits.indexWhere((h) => h.id == id);
-    if (index != -1) {
-      _habits[index].name = newName;
-      saveHabits(); notifyListeners();
-    }
-  }
-
-  // UPDATE (Edit Duration)
-  void editHabitDuration(String id, int newDurationSeconds) {
-    final index = _habits.indexWhere((h) => h.id == id);
-    if (index != -1) {
-      _habits[index].targetDurationSeconds = newDurationSeconds;
-      _habits[index].remainingSeconds = newDurationSeconds; // Reset remaining time on edit
-      
-      if (newDurationSeconds > 0) {
-        // Only one timer running at a time
-        for (var h in _habits) {
-          if (h.targetDurationSeconds > 0 && h.id != id) {
-            h.completed = false;
-          }
+  // --- CONSOLIDATED ADD/EDIT METHOD ---
+  void saveOrUpdateHabit({String? id, required String name, required int durationSeconds}) {
+    if (id == null) {
+      // CREATE NEW
+      _habits.add(Habit(id: _uuid.v4(), name: name, targetDurationSeconds: durationSeconds));
+    } else {
+      // UPDATE EXISTING
+      final index = _habits.indexWhere((h) => h.id == id);
+      if (index != -1) {
+        _habits[index].name = name;
+        _habits[index].targetDurationSeconds = durationSeconds;
+        // If they edit the duration while it's running, cancel the current cooldown
+        if (_habits[index].cooldownEndTime != null) {
+           _habits[index].cooldownEndTime = null;
+           _habits[index].completed = true; // Keep it checked since they just updated it, but stop the timer
         }
-        
-        _habits[index].completed = true;
-        _startGlobalTicker();
       }
-      
-      saveHabits(); notifyListeners();
     }
+
+    saveHabits();
+    notifyListeners();
   }
 
-  // DELETE
   void deleteHabit(int index) {
     _habits.removeAt(index);
     saveHabits(); notifyListeners();
   }
 
-  // --- STORAGE LOGIC ---
+  // ==========================================
+  // STORAGE & BOOT LOGIC
+  // ==========================================
+
   Future<void> loadHabits() async {
     final prefs = await SharedPreferences.getInstance();
     final String? habitsString = prefs.getString('saved_habits');
+    
     if (habitsString != null) {
       final List<dynamic> decoded = jsonDecode(habitsString);
       _habits = decoded.map((item) => Habit.fromjson(item)).toList();
+      
       _checkDailyResets();
+      
+      // Boot Sequence: Catch up on ALL timers!
+      final now = DateTime.now();
+      bool changesMade = false;
+      bool needHeartbeat = false;
+
+      for (var habit in _habits) {
+        if (habit.cooldownEndTime != null) {
+          if (now.isAfter(habit.cooldownEndTime!)) {
+            // Timer finished while app was closed!
+            habit.cooldownEndTime = null;
+            habit.completed = false; 
+            changesMade = true;
+          } else {
+            // Still running!
+            needHeartbeat = true;
+          }
+        }
+      }
+
+      if (changesMade) saveHabits();
+      if (needHeartbeat) _startUniversalTicker();
+      
       notifyListeners();
     }
   }
 
+  // Put this right above your _checkDailyResets() method!
   Future<void> saveHabits() async {
     final prefs = await SharedPreferences.getInstance();
     final String encoded = jsonEncode(_habits.map((h) => h.toMap()).toList());
@@ -152,40 +172,24 @@ class HabitProvider extends ChangeNotifier {
 
   void _checkDailyResets() {
     bool changesMade = false;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day); // Strip hours/minutes
+    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day); 
 
     for (var habit in _habits) {
       if (habit.lastCompletedDate != null) {
-        // Strip hours/minutes from the last completed date too
-        final lastCompletedDay = DateTime(
-          habit.lastCompletedDate!.year,
-          habit.lastCompletedDate!.month,
-          habit.lastCompletedDate!.day,
-        );
+        final lastDay = DateTime(habit.lastCompletedDate!.year, habit.lastCompletedDate!.month, habit.lastCompletedDate!.day);
+        final diff = today.difference(lastDay).inDays;
 
-        // Calculate how many days have passed
-        final difference = today.difference(lastCompletedDay).inDays;
-
-        if (difference >= 1 && habit.completed) {
-          // A new day has started! Uncheck the habit.
-          habit.completed = false;
+        if (diff >= 1 && habit.completed) {
+          habit.completed = false; 
+          habit.cooldownEndTime = null; // Clear any leftover timers from yesterday
           changesMade = true;
         }
-
-        if (difference >= 2 && habit.currentStreak > 0) {
-          // They missed a full day. Break the streak!
-          habit.currentStreak = 0;
+        if (diff >= 2 && habit.currentStreak > 0) {
+          habit.currentStreak = 0; 
           changesMade = true;
         }
       }
     }
-
-    if (changesMade) {
-      saveHabits(); // Save the reset state to the hard drive
-      notifyListeners();
-    }
+    if (changesMade) saveHabits(); 
   }
-
 }
-
