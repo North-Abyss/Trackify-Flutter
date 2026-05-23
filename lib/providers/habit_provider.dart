@@ -96,24 +96,46 @@ class HabitProvider extends ChangeNotifier {
   }
 
   // --- CONSOLIDATED ADD/EDIT METHOD ---
-  void saveOrUpdateHabit({String? id, required String name, required int durationSeconds}) {
+  void saveOrUpdateHabit({
+    String? id, 
+    required String name, 
+    required int durationSeconds,
+    // NEW REQUIRED PARAMETERS
+    required String description,
+    required String link, 
+    required String tag, 
+    required int colorValue,
+  }) {
     if (id == null) {
       // CREATE NEW
-      _habits.add(Habit(id: _uuid.v4(), name: name, targetDurationSeconds: durationSeconds));
+      _habits.add(Habit(
+        id: _uuid.v4(), 
+        name: name, 
+        targetDurationSeconds: durationSeconds,
+        description: description,
+        link: link,
+        tag: tag,
+        colorValue: colorValue,
+      ));
     } else {
       // UPDATE EXISTING
       final index = _habits.indexWhere((h) => h.id == id);
       if (index != -1) {
         _habits[index].name = name;
-        _habits[index].targetDurationSeconds = durationSeconds;
-        // If they edit the duration while it's running, cancel the current cooldown
-        if (_habits[index].cooldownEndTime != null) {
+        _habits[index].description = description;
+        _habits[index].link = link;
+        _habits[index].tag = tag;
+        _habits[index].colorValue = colorValue;
+        
+        // --- THE FROZEN TIMER FIX ---
+        // If they change the duration, we MUST cancel the current cooldown and uncheck it
+        if (durationSeconds != _habits[index].targetDurationSeconds) {
+           _habits[index].targetDurationSeconds = durationSeconds;
            _habits[index].cooldownEndTime = null;
-           _habits[index].completed = true; // Keep it checked since they just updated it, but stop the timer
+           _habits[index].completed = false; 
         }
       }
     }
-
     saveHabits();
     notifyListeners();
   }

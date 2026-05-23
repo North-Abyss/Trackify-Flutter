@@ -148,7 +148,6 @@ class ThemeProvider extends ChangeNotifier {
 
 }
 
-
 // Helper to convert CSS hex strings ("#0D47A1") into Flutter Colors!
 Color hexToColor(String hexString) {
   final buffer = StringBuffer();
