@@ -214,4 +214,27 @@ class HabitProvider extends ChangeNotifier {
     }
     if (changesMade) saveHabits(); 
   }
+
+  // ==========================================
+  // EXPORT / IMPORT LOGIC
+  // ==========================================
+
+  // Returns a raw JSON string of all current habits
+  String exportToJson() {
+    return jsonEncode(_habits.map((h) => h.toMap()).toList());
+  }
+
+  // Takes a raw JSON string and replaces the current data
+  void importFromJson(String jsonString) {
+    try {
+      final List<dynamic> decoded = jsonDecode(jsonString);
+      _habits = decoded.map((item) => Habit.fromjson(item)).toList();
+      saveHabits(); // Save the imported data to the hard drive immediately!
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Failed to import JSON: $e");
+    }
+  }
+
+  
 }

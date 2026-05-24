@@ -7,6 +7,8 @@ environment:
   sdk: ">=3.8.1 <4.0.0"
 
 dependencies:
+  dynamic_color: ^1.8.1
+  file_picker: ^11.0.2
   flutter:
     sdk: flutter
   provider: ^6.1.5+1

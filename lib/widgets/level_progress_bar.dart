@@ -19,7 +19,7 @@ class LevelProgressBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5), // Subtle background
         borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: colorScheme.outlineVariant),
+        border: Border.all(color: colorScheme.primary), // Accent border to make it pop
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

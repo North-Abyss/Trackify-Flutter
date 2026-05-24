@@ -195,10 +195,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Scaffold(
           //backgroundColor: Colors.grey[200],
           appBar: AppBar(
-            title: const Text('Trackify Dashboard'),
+            title: const Text('Trackify Dashboard', style: TextStyle(fontSize: 28.0)),
             actions: [
               // 1. Profile Button
               IconButton(
+                iconSize: 32.0,
                 icon: const Icon(Icons.person),
                 onPressed: () {
                   Navigator.push(
@@ -209,6 +210,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               // 2. Settings Button
               IconButton(
+                iconSize: 32.0,
                 icon: const Icon(Icons.settings),
                 onPressed: () {
                   Navigator.push(
