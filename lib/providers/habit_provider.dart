@@ -15,11 +15,31 @@ class HabitProvider extends ChangeNotifier {
   HabitProvider() { loadHabits(); } 
 
   // ==========================================
+  // 🚀 CALENDAR HISTORY HELPERS
+  // ==========================================
+  
+  // Strips the time (hours/mins) so the calendar can match days perfectly
+  DateTime _stripTime(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  // Saves or removes the exact day the habit was completed
+  void _recordCompletion(Habit habit, bool isComplete) {
+    final cleanDate = _stripTime(DateTime.now());
+    if (isComplete) {
+      if (!habit.completedDates.any((d) => d.isAtSameMomentAs(cleanDate))) {
+        habit.completedDates.add(cleanDate);
+      }
+    } else {
+      habit.completedDates.removeWhere((d) => d.isAtSameMomentAs(cleanDate));
+    }
+  }
+
+  // ==========================================
   // THE UNIVERSAL HEARTBEAT ENGINE
   // ==========================================
   
   void _startUniversalTicker() {
-    // Only start if not already running
     if (_globalTimer != null && _globalTimer!.isActive) return;
 
     _globalTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -31,20 +51,17 @@ class HabitProvider extends ChangeNotifier {
         if (habit.cooldownEndTime != null) {
           anyCoolingDown = true;
           
-          // Did this specific habit finish its cooldown?
           if (now.isAfter(habit.cooldownEndTime!)) {
-            habit.cooldownEndTime = null; // Clear the timer
-            habit.completed = false; // UNCHECK it so they can do it again!
+            habit.cooldownEndTime = null; 
+            habit.completed = false; 
             changesMade = true;
           }
         }
       }
 
-      // Always redraw UI if timers are running so the seconds tick down visually
       if (anyCoolingDown) {
         notifyListeners(); 
       } else {
-        // If NO habits are cooling down, kill the heartbeat to save battery!
         timer.cancel();
       }
 
@@ -52,7 +69,6 @@ class HabitProvider extends ChangeNotifier {
     });
   }
 
-  // Helper to get remaining seconds for a specific habit
   int getRemainingSeconds(Habit habit) {
     if (habit.cooldownEndTime == null) return 0;
     final remaining = habit.cooldownEndTime!.difference(DateTime.now()).inSeconds;
@@ -71,20 +87,22 @@ class HabitProvider extends ChangeNotifier {
     if (habit.targetDurationSeconds > 0) {
       // --- COOLDOWN HABIT ---
       if (habit.cooldownEndTime != null) {
-        // Tapped while cooling down -> Cancel the timer early
         habit.cooldownEndTime = null;
         habit.completed = false;
+        _recordCompletion(habit, false); // 🚀 REMOVE FROM HISTORY (CANCELLED)
       } else {
-        // Drink Water -> Check it off -> Start cooldown
         habit.completed = true;
         habit.lastCompletedDate = DateTime.now();
         habit.currentStreak += 1;
+        _recordCompletion(habit, true); // 🚀 ADD TO HISTORY
         habit.cooldownEndTime = DateTime.now().add(Duration(seconds: habit.targetDurationSeconds));
-        _startUniversalTicker(); // Ensure heartbeat is running
+        _startUniversalTicker(); 
       }
     } else {
       // --- NORMAL HABIT ---
       habit.completed = !habit.completed;
+      _recordCompletion(habit, habit.completed); // 🚀 ADD/REMOVE HISTORY
+      
       if (habit.completed) {
         habit.lastCompletedDate = DateTime.now();
         habit.currentStreak += 1; 
@@ -95,19 +113,16 @@ class HabitProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- CONSOLIDATED ADD/EDIT METHOD ---
   void saveOrUpdateHabit({
     String? id, 
     required String name, 
     required int durationSeconds,
-    // NEW REQUIRED PARAMETERS
     required String description,
     required String link, 
     required String tag, 
     required int colorValue,
   }) {
     if (id == null) {
-      // CREATE NEW
       _habits.add(Habit(
         id: _uuid.v4(), 
         name: name, 
@@ -118,7 +133,6 @@ class HabitProvider extends ChangeNotifier {
         colorValue: colorValue,
       ));
     } else {
-      // UPDATE EXISTING
       final index = _habits.indexWhere((h) => h.id == id);
       if (index != -1) {
         _habits[index].name = name;
@@ -127,8 +141,6 @@ class HabitProvider extends ChangeNotifier {
         _habits[index].tag = tag;
         _habits[index].colorValue = colorValue;
         
-        // --- THE FROZEN TIMER FIX ---
-        // If they change the duration, we MUST cancel the current cooldown and uncheck it
         if (durationSeconds != _habits[index].targetDurationSeconds) {
            _habits[index].targetDurationSeconds = durationSeconds;
            _habits[index].cooldownEndTime = null;
@@ -159,7 +171,6 @@ class HabitProvider extends ChangeNotifier {
       
       _checkDailyResets();
       
-      // Boot Sequence: Catch up on ALL timers!
       final now = DateTime.now();
       bool changesMade = false;
       bool needHeartbeat = false;
@@ -167,12 +178,10 @@ class HabitProvider extends ChangeNotifier {
       for (var habit in _habits) {
         if (habit.cooldownEndTime != null) {
           if (now.isAfter(habit.cooldownEndTime!)) {
-            // Timer finished while app was closed!
             habit.cooldownEndTime = null;
             habit.completed = false; 
             changesMade = true;
           } else {
-            // Still running!
             needHeartbeat = true;
           }
         }
@@ -185,7 +194,6 @@ class HabitProvider extends ChangeNotifier {
     }
   }
 
-  // Put this right above your _checkDailyResets() method!
   Future<void> saveHabits() async {
     final prefs = await SharedPreferences.getInstance();
     final String encoded = jsonEncode(_habits.map((h) => h.toMap()).toList());
@@ -203,7 +211,7 @@ class HabitProvider extends ChangeNotifier {
 
         if (diff >= 1 && habit.completed) {
           habit.completed = false; 
-          habit.cooldownEndTime = null; // Clear any leftover timers from yesterday
+          habit.cooldownEndTime = null; 
           changesMade = true;
         }
         if (diff >= 2 && habit.currentStreak > 0) {
@@ -219,22 +227,18 @@ class HabitProvider extends ChangeNotifier {
   // EXPORT / IMPORT LOGIC
   // ==========================================
 
-  // Returns a raw JSON string of all current habits
   String exportToJson() {
     return jsonEncode(_habits.map((h) => h.toMap()).toList());
   }
 
-  // Takes a raw JSON string and replaces the current data
   void importFromJson(String jsonString) {
     try {
       final List<dynamic> decoded = jsonDecode(jsonString);
       _habits = decoded.map((item) => Habit.fromjson(item)).toList();
-      saveHabits(); // Save the imported data to the hard drive immediately!
+      saveHabits(); 
       notifyListeners();
     } catch (e) {
       debugPrint("Failed to import JSON: $e");
     }
   }
-
-  
 }

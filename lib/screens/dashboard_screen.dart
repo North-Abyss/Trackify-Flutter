@@ -9,6 +9,7 @@ import '../providers/theme_provider.dart'; // Import the ThemeProvider to access
 import '../providers/user_provider.dart'; // Import the UserProvider
 import 'profile_screen.dart';
 import 'settings_screen.dart';
+import 'calendar_screen.dart';
 import '../widgets/habit_card.dart';
 import 'package:provider/provider.dart'; // Import Provider
 import '../providers/habit_provider.dart'; // Import your new manager
@@ -197,6 +198,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           appBar: AppBar(
             title: const Text('Trackify Dashboard', style: TextStyle(fontSize: 28.0)),
             actions: [
+              // 0. Calendar Button
+              IconButton(
+                iconSize: 32.0, 
+                icon: const Icon(Icons.calendar_month),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CalendarScreen()),
+                  );
+                },
+              ),
               // 1. Profile Button
               IconButton(
                 iconSize: 32.0,

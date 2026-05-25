@@ -1,3 +1,4 @@
+// lib/models/habit.dart
 class Habit {
   final String id;
   String name;
@@ -11,6 +12,8 @@ class Habit {
   String link;
   String tag;
   int colorValue;
+  // The Historical Tracker! A list of every day this habit was finished.
+  List<DateTime> completedDates; 
 
   Habit({
     required this.id,
@@ -25,7 +28,9 @@ class Habit {
     this.link = '',
     this.tag = '',
     this.colorValue = 0xFF4CAF50, // Default to Material Green
-  });
+    List<DateTime>? completedDates,
+  }): completedDates = completedDates ?? []; // Initialize as empty list if none exist
+
 
   Map<String, dynamic> toMap() {
     return {
@@ -39,6 +44,8 @@ class Habit {
       'link': link,
       'tag': tag,
       'colorValue': colorValue,
+      // Save the historical dates to the hard drive as strings
+      'completedDates': completedDates.map((date) => date.toIso8601String()).toList(),
     };
   }
 
@@ -54,6 +61,10 @@ class Habit {
       link: json['link'] ?? '',
       tag: json['tag'] ?? '',
       colorValue: json['colorValue'] ?? 0xFF4CAF50,
+      // Safely load the history, even if it's an older save file!
+      completedDates: (json['completedDates'] as List<dynamic>?)
+          ?.map((e) => DateTime.parse(e as String))
+          .toList() ?? [],
     );
   }
 }
