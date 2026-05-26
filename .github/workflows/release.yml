@@ -127,26 +127,30 @@ jobs:
           cd build/linux/x64/release/bundle
           zip -r ../../../../../trackify-linux-portable.zip .
           cd -
-
+      
       - name: Package .deb file
         run: |
-          # 1. Scaffold directories
-          mkdir -p deb-package/opt/trackify
+          # 1. Scaffold directories (NO MORE /opt! Only /usr!)
+          mkdir -p deb-package/usr/lib/trackify
+          mkdir -p deb-package/usr/bin
           mkdir -p deb-package/usr/share/applications
           mkdir -p deb-package/usr/share/icons/hicolor/1024x1024/apps
           mkdir -p deb-package/DEBIAN
 
-          # 2. Copy App & Icon
-          cp -R build/linux/x64/release/bundle/* deb-package/opt/trackify/
+          # 2. Copy App Bundle & Icon into /usr/lib and /usr/share
+          cp -R build/linux/x64/release/bundle/* deb-package/usr/lib/trackify/
           cp assets/icon.png deb-package/usr/share/icons/hicolor/1024x1024/apps/trackify.png
 
-          # 3. FIX APP PERMISSIONS (This makes the app actually open!)
-          chmod -R 755 deb-package/opt/trackify/
-          
-          # FIX ICON PERMISSIONS (This makes the icon visible!)
+          # 3. Create the global system command! 
+          # This links your app into the main system PATH.
+          ln -s /usr/lib/trackify/trackify deb-package/usr/bin/trackify
+
+          # 4. Strict Linux Permissions
+          chmod -R 755 deb-package/usr/lib/trackify/
+          chmod 755 deb-package/usr/bin/trackify
           chmod 644 deb-package/usr/share/icons/hicolor/1024x1024/apps/trackify.png
 
-          # 4. Create DEBIAN Control File
+          # 5. Create DEBIAN Control File
           cat <<EOF > deb-package/DEBIAN/control
           Package: trackify
           Version: 1.0.0
@@ -157,30 +161,22 @@ jobs:
           Description: Trackify - The Time Matrix. Track your habits beautifully.
           EOF
 
-          # 5. Create Desktop Entry (Strict Paths)
+          # 6. Create Desktop Entry (Exactly how you requested!)
           cat <<EOF > deb-package/usr/share/applications/trackify.desktop
           [Desktop Entry]
           Version=1.0
           Name=Trackify
           GenericName=Habit Tracker
-          Comment=Track your habits beautifully.
-          Exec=/opt/trackify/trackify
-          Icon=/usr/share/icons/hicolor/1024x1024/apps/trackify.png
+          Icon=trackify
+          Exec=trackify %U
           Terminal=false
           Type=Application
           Categories=Utility;Productivity;
+          Keywords=Habit;Tracker;Productivity;Flutter;
           EOF
 
           # FIX MENU PERMISSIONS
           chmod 644 deb-package/usr/share/applications/trackify.desktop
 
-          # 6. Build the package
+          # 7. Build the package
           dpkg-deb --build deb-package trackify-linux-x64.deb
-
-      - name: Upload Linux Assets to GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            trackify-linux-x64.deb
-            trackify-linux-portable.zip
-            
