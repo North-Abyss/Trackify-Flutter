@@ -1,0 +1,157 @@
+name: Trackify Cloud Compiler
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  # ==========================================
+  # 🤖 JOB 1: ANDROID (Universal & Split APKs)
+  # ==========================================
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Universal APK (Fat APK)
+        run: flutter build apk --release
+
+      - name: Build Split APKs (arm64, armeabi, x86_64)
+        run: flutter build apk --split-per-abi --release
+
+      - name: Upload All APKs to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/app-x86_64-release.apk
+
+  # ==========================================
+  # 🪟 JOB 2: WINDOWS (.exe INSTALLER)
+  # ==========================================
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install Inno Setup (For building .exe installers)
+        run: choco install innosetup
+
+      - name: Build Windows Native App
+        run: |
+          flutter pub get
+          flutter build windows --release
+
+      - name: Package into .exe Installer
+        run: |
+          # Create an Inno Setup script on the fly!
+          $issContent = @"
+          [Setup]
+          AppName=Trackify
+          AppVersion=1.0.0
+          DefaultDirName={autopf}\Trackify
+          OutputDir=.\Output
+          OutputBaseFilename=Trackify-Windows-Setup
+          Compression=lzma
+          SolidCompression=yes
+          SetupIconFile=windows\runner\resources\app_icon.ico
+          
+          [Files]
+          Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+          
+          [Icons]
+          # UPDATED TO "trackify.exe"
+          Name: "{autoprograms}\Trackify"; Filename: "{app}\trackify.exe"
+          Name: "{autodesktop}\Trackify"; Filename: "{app}\trackify.exe"
+          "@
+          
+          Set-Content -Path installer.iss -Value $issContent
+          iscc installer.iss
+
+      - name: Upload .exe to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: Output/Trackify-Windows-Setup.exe
+
+  # ==========================================
+  # 🐧 JOB 3: LINUX (.deb INSTALLER WITH ICON)
+  # ==========================================
+  build-linux-deb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Linux Build Dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y clang cmake git ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Build Flutter Linux App
+        run: |
+          flutter pub get
+          flutter build linux --release
+
+      - name: Package .deb file
+        run: |
+          mkdir -p deb-package/opt/trackify
+          mkdir -p deb-package/usr/share/applications
+          mkdir -p deb-package/usr/share/icons/hicolor/1024x1024/apps
+          mkdir -p deb-package/DEBIAN
+
+          cp -R build/linux/x64/release/bundle/* deb-package/opt/trackify/
+          cp assets/icon.png deb-package/usr/share/icons/hicolor/1024x1024/apps/trackify.png
+
+          cat <<EOF > deb-package/DEBIAN/control
+          Package: trackify
+          Version: 1.0.0
+          Section: base
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Trackify Developer
+          Description: Trackify - The Time Matrix. Track your habits beautifully.
+          EOF
+
+          cat <<EOF > deb-package/usr/share/applications/trackify.desktop
+          [Desktop Entry]
+          Version=1.0
+          Name=Trackify
+          GenericName=Habit Tracker
+          # UPDATED TO "trackify"
+          Exec=/opt/trackify/trackify
+          Icon=trackify
+          Terminal=false
+          Type=Application
+          Categories=Utility;
+          EOF
+
+          dpkg-deb --build deb-package trackify-linux-x64.deb
+
+      - name: Upload .deb to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: trackify-linux-x64.deb
