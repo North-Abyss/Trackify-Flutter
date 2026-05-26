@@ -5,7 +5,6 @@ on:
     tags:
       - 'v*'
 
-# Permission to write
 permissions:
   contents: write
 
@@ -30,13 +29,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Universal APK (Fat APK)
+      - name: Build Universal APK
         run: flutter build apk --release
 
-      - name: Build Split APKs (arm64, armeabi, x86_64)
+      - name: Build Split APKs
         run: flutter build apk --split-per-abi --release
 
-      - name: Upload All APKs to GitHub Release
+      - name: Upload APKs to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
@@ -46,7 +45,7 @@ jobs:
             build/app/outputs/flutter-apk/app-x86_64-release.apk
 
   # ==========================================
-  # 🪟 JOB 2: WINDOWS (.exe INSTALLER)
+  # 🪟 JOB 2: WINDOWS (.exe & .zip)
   # ==========================================
   build-windows:
     runs-on: windows-latest
@@ -58,7 +57,7 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Install Inno Setup (For building .exe installers)
+      - name: Install Inno Setup
         run: choco install innosetup
 
       - name: Build Windows Native App
@@ -66,9 +65,11 @@ jobs:
           flutter pub get
           flutter build windows --release
 
+      - name: Create Portable Zip
+        run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath trackify-windows-portable.zip
+
       - name: Package into .exe Installer
         run: |
-          # Create an Inno Setup script on the fly!
           $issContent = @"
           [Setup]
           AppName=Trackify
@@ -84,7 +85,6 @@ jobs:
           Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
           
           [Icons]
-          # UPDATED TO "trackify.exe"
           Name: "{autoprograms}\Trackify"; Filename: "{app}\trackify.exe"
           Name: "{autodesktop}\Trackify"; Filename: "{app}\trackify.exe"
           "@
@@ -92,13 +92,15 @@ jobs:
           Set-Content -Path installer.iss -Value $issContent
           iscc installer.iss
 
-      - name: Upload .exe to GitHub Release
+      - name: Upload Windows Assets to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: Output/Trackify-Windows-Setup.exe
+          files: |
+            Output/Trackify-Windows-Setup.exe
+            trackify-windows-portable.zip
 
   # ==========================================
-  # 🐧 JOB 3: LINUX (.deb INSTALLER WITH ICON)
+  # 🐧 JOB 3: LINUX (.deb & .zip)
   # ==========================================
   build-linux-deb:
     runs-on: ubuntu-latest
@@ -108,7 +110,7 @@ jobs:
       - name: Install Linux Build Dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y clang cmake git ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev
+          sudo apt-get install -y clang cmake git ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev zip
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -120,16 +122,31 @@ jobs:
           flutter pub get
           flutter build linux --release
 
+      - name: Create Portable Zip
+        run: |
+          cd build/linux/x64/release/bundle
+          zip -r ../../../../../trackify-linux-portable.zip .
+          cd -
+
       - name: Package .deb file
         run: |
+          # 1. Scaffold directories
           mkdir -p deb-package/opt/trackify
           mkdir -p deb-package/usr/share/applications
           mkdir -p deb-package/usr/share/icons/hicolor/1024x1024/apps
           mkdir -p deb-package/DEBIAN
 
+          # 2. Copy App & Icon
           cp -R build/linux/x64/release/bundle/* deb-package/opt/trackify/
           cp assets/icon.png deb-package/usr/share/icons/hicolor/1024x1024/apps/trackify.png
 
+          # 3. FIX APP PERMISSIONS (This makes the app actually open!)
+          chmod -R 755 deb-package/opt/trackify/
+          
+          # FIX ICON PERMISSIONS (This makes the icon visible!)
+          chmod 644 deb-package/usr/share/icons/hicolor/1024x1024/apps/trackify.png
+
+          # 4. Create DEBIAN Control File
           cat <<EOF > deb-package/DEBIAN/control
           Package: trackify
           Version: 1.0.0
@@ -140,22 +157,30 @@ jobs:
           Description: Trackify - The Time Matrix. Track your habits beautifully.
           EOF
 
+          # 5. Create Desktop Entry (Strict Paths)
           cat <<EOF > deb-package/usr/share/applications/trackify.desktop
           [Desktop Entry]
           Version=1.0
           Name=Trackify
           GenericName=Habit Tracker
-          # UPDATED TO "trackify"
+          Comment=Track your habits beautifully.
           Exec=/opt/trackify/trackify
-          Icon=trackify
+          Icon=/usr/share/icons/hicolor/1024x1024/apps/trackify.png
           Terminal=false
           Type=Application
-          Categories=Utility;
+          Categories=Utility;Productivity;
           EOF
 
+          # FIX MENU PERMISSIONS
+          chmod 644 deb-package/usr/share/applications/trackify.desktop
+
+          # 6. Build the package
           dpkg-deb --build deb-package trackify-linux-x64.deb
 
-      - name: Upload .deb to GitHub Release
+      - name: Upload Linux Assets to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: trackify-linux-x64.deb
+          files: |
+            trackify-linux-x64.deb
+            trackify-linux-portable.zip
+            
