@@ -9,6 +9,7 @@ set -e
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}Starting Trackify git sync...${NC}"
@@ -22,7 +23,7 @@ echo -e "${BLUE}Committing changes...${NC}"
 read -p "Enter commit message: " commit_message
 git commit -m "$commit_message" || echo "No changes to commit"
 
-# Fetch latest changes from remote
+# Fetch latest changes from remote (this also fetches the latest tags)
 echo -e "${BLUE}Fetching from remote...${NC}"
 git fetch origin
 
@@ -44,10 +45,30 @@ echo -e "${YELLOW}--- Release Manager ---${NC}"
 read -p "Do you want to trigger a Cloud Release for these changes? (y/n): " trigger_release
 
 if [[ "$trigger_release" == "y" || "$trigger_release" == "Y" ]]; then
-    read -p "Enter version tag (e.g., v1.0.2): " version_tag
+    read -p "Enter version tag (e.g., v1.0.0 or v0.0.0 for testing): " version_tag
     
-    echo -e "${BLUE}Tagging release $version_tag...${NC}"
+    echo -e "${BLUE}Preparing tag $version_tag...${NC}"
+    
+    # Check if the tag already exists (we fetched earlier, so local knowledge is up-to-date)
+    if git rev-parse -q --verify "refs/tags/$version_tag" >/dev/null; then
+        echo -e "${RED}Warning: Tag '$version_tag' already exists!${NC}"
+        read -p "Can I remove it and replace it with the current code? (y/n): " replace_tag
+        
+        if [[ "$replace_tag" == "y" || "$replace_tag" == "Y" ]]; then
+            echo -e "${YELLOW}Deleting old tag '$version_tag'...${NC}"
+            git tag -d "$version_tag" 2>/dev/null || true
+            git push origin --delete "$version_tag" 2>/dev/null || true
+        else
+            echo -e "${BLUE}Release aborted to protect the existing tag. Have a great day!${NC}"
+            exit 0
+        fi
+    fi
+    
+    # Create the brand new tag on the current code
+    echo -e "${BLUE}Tagging current code as $version_tag...${NC}"
     git tag "$version_tag"
+    
+    # Push the new tag to GitHub to wake up the CI/CD servers
     git push origin "$version_tag"
     
     echo -e "${GREEN}Boom! Release tag pushed.${NC}"
