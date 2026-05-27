@@ -180,3 +180,10 @@ jobs:
 
           # 7. Build the package
           dpkg-deb --build deb-package trackify-linux-x64.deb
+
+      - name: Upload Linux Assets to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            trackify-linux-x64.deb
+            trackify-linux-portable.zip

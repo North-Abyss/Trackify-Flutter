@@ -133,6 +133,56 @@ This project demonstrates:
 - **Import / Export:** Added JSON backup workflows directly from the Settings screen.
 - **Dynamic Theme Support:** Added Material You-style dynamic colors and curated accent palettes.
 
+## �️ Project Architecture
+
+The diagram below shows how Trackify is structured, how screens talk to providers, and where persistence and backups take place.
+
+```mermaid
+flowchart TD
+  App[App Entry Point]
+  UI[UI Screens]
+  Dashboard[DashboardScreen]
+  Calendar[CalendarScreen]
+  Settings[SettingsScreen]
+  Profile[ProfileScreen]
+  Providers[Providers]
+  HabitProvider[HabitProvider]
+  ThemeProvider[ThemeProvider]
+  UserProvider[UserProvider]
+  Models[Data Models]
+  HabitModel[Habit model]
+  UserProfileModel[UserProfile model]
+  Storage[Local Storage & Backup]
+  SharedPref[SharedPreferences]
+  Backup[JSON Import / Export]
+  CalendarLib[table_calendar]
+  ThemeLib[dynamic_color]
+  CI[GitHub Actions CI/CD]
+
+  App --> UI
+  UI --> Dashboard
+  UI --> Calendar
+  UI --> Settings
+  UI --> Profile
+  Dashboard -->|reads / updates| HabitProvider
+  Calendar -->|reads| HabitProvider
+  Settings -->|configures| ThemeProvider
+  Settings -->|triggers| Backup
+  Profile -->|reads / updates| UserProvider
+  HabitProvider --> Models
+  ThemeProvider --> Models
+  UserProvider --> Models
+  Models --> HabitModel
+  Models --> UserProfileModel
+  HabitProvider --> SharedPref
+  Backup --> SharedPref
+  Calendar --> CalendarLib
+  Settings --> ThemeLib
+  CI -->|build & release| UI
+```
+
+Open this README in VS Code Markdown preview or any Mermaid-enabled renderer to view the rendered architecture diagram.
+
 ## 📝 Future Enhancements
 
 - [x] Streak tracking
