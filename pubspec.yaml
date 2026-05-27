@@ -8,15 +8,17 @@ environment:
 
 dependencies:
   dynamic_color: ^1.8.1
-  file_picker: ^11.0.2
+  file_picker: ^12.0.0-beta.4
   flutter:
     sdk: flutter
+  flutter_local_notifications: ^21.0.0
   http: ^1.6.0
-  package_info_plus: ^9.0.1
+  package_info_plus: ^10.1.0
   path_provider: ^2.1.5
   provider: ^6.1.5+1
   shared_preferences: ^2.5.5  # Used for storing simple key-value pairs locally on the device
   table_calendar: ^3.2.0
+  timezone: ^0.11.0
   url_launcher: ^6.3.2
   uuid: ^4.5.3                # Used for generating unique identifiers
 
@@ -29,8 +31,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   # Custom Themes:
-  assets:
-    - assets/custom_theme.json
+  # assets:
+  #   - assets/custom_theme.json
 
 flutter_launcher_icons:
   android: "launcher_icon"

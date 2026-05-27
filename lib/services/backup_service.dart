@@ -17,44 +17,34 @@ class BackupService {
         allData[key] = prefs.get(key);
       }
       
-      // 2. Convert to JSON
+      // 2. Convert to JSON and Bytes
       String jsonData = jsonEncode(allData);
+      final Uint8List fileBytes = Uint8List.fromList(utf8.encode(jsonData));
       
-      // 3. Generate Filename (e.g., backup-20260527-23:40:00-linux.trackify)
-      String date = DateTime.now().toIso8601String().split('T').first.replaceAll('-', '');
-      String time = DateTime.now().toIso8601String().split('T').last.split('.').first;
+      // 3. Generate Filename
+      // This turns "2026-05-27T19:09:12" into "2026-05-27-T-19-09-12"
+      String safeDate = DateTime.now().toIso8601String().replaceAll(RegExp(r'[:-]'), '-').replaceFirst('T', '-T-').split('.').first;
       String os = kIsWeb ? 'web' : Platform.operatingSystem;
-      String fileName = 'backup-$date-$time-$os.trackify';
+      String fileName = 'backup-$safeDate-$os.trackify'; // eg: backup-2026-05-27-T-19-09-12-web.trackify
 
-      // 4. Save Logic
-      if (kIsWeb) {
-        final bytes = Uint8List.fromList(utf8.encode(jsonData));
-        await FilePicker.saveFile(
-          dialogTitle: 'Save Trackify Backup',
-          fileName: fileName,
-          type: FileType.custom,
-          allowedExtensions: ['trackify'],
-          bytes: bytes,
-        );
-        return true;
-      } else {
-        String? outputFile = await FilePicker.saveFile(
-          dialogTitle: 'Save Trackify Backup',
-          fileName: fileName,
-          type: FileType.custom,
-          allowedExtensions: ['trackify'],
-        );
+      // 4. Unified Save Logic (Handles both Web and Desktop perfectly in v12)
+      String? outputFile = await FilePicker.saveFile(
+        dialogTitle: 'Save Trackify Backup',
+        fileName: fileName,
+        type: FileType.custom,
+        allowedExtensions: ['trackify'],
+        bytes: fileBytes, // Web uses this automatically to trigger a browser download
+      );
 
-        if (outputFile != null) {
-          File file = File(outputFile);
-          await file.writeAsString(jsonData);
-          return true;
-        }
+      // On Desktop/Mobile, outputFile contains the path, so we write to the hard drive
+      if (outputFile != null && !kIsWeb) {
+        File file = File(outputFile);
+        await file.writeAsString(jsonData);
       }
-      return false; // Cancelled
+      
+      return true;
     } catch (e) {
-      // Notify using print for now, can be enhanced to show a SnackBar or dialog in the UI
-      print("Export Error: $e");
+      debugPrint("Export Error: $e");
       return false;
     }
   }
@@ -70,8 +60,11 @@ class BackupService {
         String jsonData = '';
         
         if (kIsWeb) {
-          jsonData = utf8.decode(result.files.single.bytes!);
+          // THE FIX: Safely await readAsBytes() instead of the deprecated .bytes!
+          final Uint8List bytes = await result.files.single.readAsBytes();
+          jsonData = utf8.decode(bytes);
         } else {
+          // THE FIX: Use dart:io File to safely read from the hard drive path
           File file = File(result.files.single.path!);
           jsonData = await file.readAsString();
         }
@@ -89,14 +82,15 @@ class BackupService {
           if (value is String) await prefs.setString(key, value);
           if (value is bool) await prefs.setBool(key, value);
           if (value is double) await prefs.setDouble(key, value);
-          if (value is List) await prefs.setStringList(key, List<String>.from(value));
+          if (value is List) {
+            await prefs.setStringList(key, List<String>.from(value));
+          }
         }
         return true; 
       }
       return false; 
     } catch (e) {
-      // Notify using print for now, can be enhanced to show a SnackBar & log or dialog in the UI 
-      print("Import Error: $e");
+      debugPrint("Import Error: $e");
       return false;
     }
   }

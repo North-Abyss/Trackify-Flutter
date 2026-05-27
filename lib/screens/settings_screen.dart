@@ -18,30 +18,11 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final TextEditingController _nameController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserName();
-  }
-
-  Future<void> _loadUserName() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _nameController.text = prefs.getString('userName') ?? '';
-    });
-  }
-
-  Future<void> _saveUserName(String name) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('userName', name);
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    //final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),

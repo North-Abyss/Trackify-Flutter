@@ -5,10 +5,20 @@ import 'package:dynamic_color/dynamic_color.dart'; // THE NEW MATERIAL YOU ENGIN
 
 import 'providers/habit_provider.dart'; 
 import 'providers/theme_provider.dart'; 
-import 'screens/dashboard_screen.dart';
 import 'providers/user_provider.dart'; 
+import 'screens/dashboard_screen.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 1. Initialize the notification engine
+  await NotificationService.initialize();
+  await NotificationService.requestPermissions();
+  
+  // 2. Schedule the daily 8 PM reminder
+  await NotificationService.scheduleDailyReminder();
+
   runApp(const MainApp());
 }
 

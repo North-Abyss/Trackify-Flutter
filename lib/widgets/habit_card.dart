@@ -15,27 +15,25 @@ class HabitCard extends StatelessWidget {
     final isCoolingDown = habit.cooldownEndTime != null;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // 1. Grab the raw custom color
-    final customColor = Color(habit.colorValue);
+    // 1. Grab the raw custom color for this specific habit
+    final seedColor = Color(habit.colorValue);
 
-    // 2. THE DARK ACCENT GENERATOR!
-    // Mix the custom color with 40% black to make it rich and deep.
-    final darkAccentColor = Color.lerp(customColor, Colors.black, 0.2)!;
+    // 2. Generate a local Material 3 ColorScheme JUST for this card!
+    final cardScheme = ColorScheme.fromSeed(
+      seedColor: seedColor,
+      brightness: isDark ? Brightness.dark : Brightness.light,
+    );
 
-    // 3. Determine the solid color: 
-    // Light Mode = Use the deep Dark Accent
-    // Dark Mode = Use the original bright color so it pops against the dark UI
-    final solidColor = isDark ? customColor : darkAccentColor;
-
-    // Background color mapping
+    // 3. Apply the Level Card Aesthetic to the Uncompleted State
     final bgColor = habit.completed
-        ? solidColor
-        : (isDark ? customColor.withValues(alpha: 0.15) : customColor.withValues(alpha: 0.1));
+        ? cardScheme.primaryContainer
+        // Match the level card's subtle background
+        : cardScheme.surfaceContainerHighest.withValues(alpha: 0.5); 
 
-    // Text color mapping (White text looks incredible on dark accents!)
+    // Text automatically adjusts for perfect contrast
     final textColor = habit.completed
-        ? (isDark ? Colors.black : Colors.white)
-        : (isDark ? Colors.white : Colors.black);
+        ? cardScheme.onPrimaryContainer
+        : cardScheme.onSurface;
 
     String formatSeconds(int seconds) {
       final d = Duration(seconds: seconds);
@@ -49,14 +47,16 @@ class HabitCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.all(12.0),
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0), // Match level card margins
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(12.0), 
+        borderRadius: BorderRadius.circular(16.0),
         border: Border.all(
-          color: habit.completed ? solidColor : customColor, 
-          //width: 2,
+          // MATCH THE LEVEL CARD BORDER! 
+          // Solid primary border for uncompleted, transparent for completed.
+          color: habit.completed ? Colors.transparent : cardScheme.primary, 
+          width: habit.completed ? 0 : 1, // Optional: slightly thicker border if you want
         ),
       ),
       child: Column(
@@ -102,10 +102,9 @@ class HabitCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                // The tag background adapts beautifully based on state and theme
                 color: habit.completed 
-                    ? (isDark ? Colors.black.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.3))
-                    : customColor.withValues(alpha: 0.2),
+                    ? cardScheme.secondary.withValues(alpha: 0.2)
+                    : cardScheme.secondaryContainer,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -113,7 +112,7 @@ class HabitCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: textColor, 
+                  color: habit.completed ? textColor : cardScheme.onSecondaryContainer, 
                 ),
               ),
             ),
@@ -122,4 +121,5 @@ class HabitCard extends StatelessWidget {
       )
     );
   }
+  
 }

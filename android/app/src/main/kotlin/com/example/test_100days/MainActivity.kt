@@ -1,4 +1,4 @@
-package com.example.test_100days
+package com.example.trackify
 
 import io.flutter.embedding.android.FlutterActivity
 

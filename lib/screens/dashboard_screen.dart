@@ -300,7 +300,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           
           floatingActionButton: FloatingActionButton(
-            //backgroundColor: Theme.of(context).colorScheme.primary, // Use the theme's primary color
             child: const Icon(Icons.add),
             onPressed: () {
               _habitController.clear();

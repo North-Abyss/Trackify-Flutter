@@ -16,11 +16,24 @@ class LevelProgressBar extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(top: 16.0, left: 16.0, right: 16.0, bottom: 8.0),
       padding: const EdgeInsets.all(20.0),
+      
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5), // Subtle background
+        color: colorScheme.surfaceContainer, // Use the theme's surface color for the card background
         borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: colorScheme.primary), // Accent border to make it pop
+        border: Border.all(
+          color: colorScheme.primary, 
+          width: 1.5, // Make the border slightly thicker so the global theme pops
+        ),
+        // Add a subtle shadow to lift it off the background
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
+
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
