@@ -12,7 +12,7 @@ A Flutter habit-tracking application built as a learning project during the **10
 - **Add/Edit/Delete Habits** - Full CRUD operations for managing habits.
 - **Local Storage** - Data is persisted instantly to the device using SharedPreferences.
 - **Theme Customization** - Support for custom dynamic themes, accent palettes, and Material You-style color selection.
-- **Import / Export Backup** - Save and restore habit data as JSON directly from the Settings screen.
+- **Import / Export Backup** - Save and restore habit data as a custom `.trackify` file directly from the Settings screen.
 - **Cloud CI/CD Pipeline** - Automated GitHub Actions release builds for Android, Windows, and Linux on every `v*` tag.
 
 ## 🏗️ Architecture
@@ -30,7 +30,7 @@ Trackify follows a clean architecture pattern with a clear separation of concern
 - **SharedPreferences** (`shared_preferences: ^2.5.5`) - Local device storage for habits and metadata.
 - **UUID** (`uuid: ^4.5.3`) - Generates unique identifiers for habits.
 - **Dynamic Color** (`dynamic_color: ^1.8.1`) - Supports Material You-style dynamic theming when available.
-- **File Picker** (`file_picker: ^11.0.2`) - Native JSON import/export UI for backups.
+- **File Picker** (`file_picker: ^11.0.2`) - Native `.trackify` import/export UI for backups.
 - **Flutter Launcher Icons** (`flutter_launcher_icons: ^0.14.4`) - Generates cross-platform app icons.
 
 ### Key Components
@@ -43,7 +43,7 @@ Trackify follows a clean architecture pattern with a clear separation of concern
 - `DashboardScreen` - Main habit list, create/edit dialog, timer overview, and navigation to the calendar/settings/profile views.
 - `CalendarScreen` - The Time Matrix historical view powered by `table_calendar`.
 - `ProfileScreen` - User profile summary and related app interactions.
-- `SettingsScreen` - Theme, data backup, and JSON import/export controls.
+- `SettingsScreen` - Theme, data backup, and `.trackify` import/export controls.
 
 #### Widgets (`lib/widgets/`)
 - `HabitCard` - Reusable habit card UI for the dashboard.
@@ -71,6 +71,18 @@ flutter pub get
 3. Run the app locally:
 ```bash
 flutter run
+```
+
+4. Run the app specific devices:
+```bash
+flutter run -d <deviceId>
+# e.g.
+flutter run -d emulator-5554          # Android emulator
+flutter run -d 0123456789ABCDEF       # physical Android device serial
+flutter run -d chrome --web-port=8080 # web (Chrome)
+flutter run -d linux                  # Linux desktop
+flutter run -d windows                # Windows desktop
+flutter run -d macos                  # macOS (must run on macOS host)
 ```
 
 ## ☁️ Cloud Compilation (CI/CD)
@@ -130,7 +142,7 @@ This project demonstrates:
 
 - **The Time Matrix:** Added historical habit completion tracking with `table_calendar` and dynamic colored markers.
 - **Cloud Compiler:** Added a GitHub Actions release pipeline for Android APKs, Windows installers, and Linux `.deb` packages.
-- **Import / Export:** Added JSON backup workflows directly from the Settings screen.
+- **Import / Export:** Added `.trackify` backup workflows directly from the Settings screen.
 - **Dynamic Theme Support:** Added Material You-style dynamic colors and curated accent palettes.
 
 ## �️ Project Architecture
@@ -138,60 +150,54 @@ This project demonstrates:
 The diagram below shows how Trackify is structured, how screens talk to providers, and where persistence and backups take place.
 
 ```mermaid
-flowchart TD
-  App[App Entry Point]
-  UI[UI Screens]
-  Dashboard[DashboardScreen]
-  Calendar[CalendarScreen]
-  Settings[SettingsScreen]
-  Profile[ProfileScreen]
-  Providers[Providers]
-  HabitProvider[HabitProvider]
-  ThemeProvider[ThemeProvider]
-  UserProvider[UserProvider]
-  Models[Data Models]
-  HabitModel[Habit model]
-  UserProfileModel[UserProfile model]
-  Storage[Local Storage & Backup]
-  SharedPref[SharedPreferences]
-  Backup[JSON Import / Export]
-  CalendarLib[table_calendar]
-  ThemeLib[dynamic_color]
-  CI[GitHub Actions CI/CD]
+graph TD
+    %% UI Layer
+    subgraph UI [UI Screens]
+        DS[DashboardScreen]
+        CS[CalendarScreen]
+        SS[SettingsScreen]
+        PS[ProfileScreen]
+    end
 
-  App --> UI
-  UI --> Dashboard
-  UI --> Calendar
-  UI --> Settings
-  UI --> Profile
-  Dashboard -->|reads / updates| HabitProvider
-  Calendar -->|reads| HabitProvider
-  Settings -->|configures| ThemeProvider
-  Settings -->|triggers| Backup
-  Profile -->|reads / updates| UserProvider
-  HabitProvider --> Models
-  ThemeProvider --> Models
-  UserProvider --> Models
-  Models --> HabitModel
-  Models --> UserProfileModel
-  HabitProvider --> SharedPref
-  Backup --> SharedPref
-  Calendar --> CalendarLib
-  Settings --> ThemeLib
-  CI -->|build & release| UI
+    %% State Management
+    subgraph State [State Management]
+        HP((HabitProvider))
+        TP((ThemeProvider))
+        UP((UserProvider))
+    end
+
+    %% Storage & DevOps
+    subgraph Data [Data & Storage]
+        SP[(SharedPreferences)]
+        TR[.trackify Backup]
+    end
+
+    subgraph CI [CI/CD Pipeline]
+        GA[GitHub Actions]
+        RL[Releases: APK, EXE, DEB]
+    end
+
+    %% Connections
+    UI -->|Reads / Updates| HP
+    UI -->|Reads / Configures| TP
+    UI -->|Reads| UP
+
+    HP <-->|Persists Data| SP
+    SS <-->|Import / Export| TR
+    
+    GA -->|Compiles on v* tag| RL
 ```
-
-Open this README in VS Code Markdown preview or any Mermaid-enabled renderer to view the rendered architecture diagram.
 
 ## 📝 Future Enhancements
 
-- [x] Streak tracking
-- [x] Habit completion history (Time Matrix)
-- [x] Export / Import habit data (JSON)
-- [x] Theme mode and accent color customization
-- [ ] Habit statistics and progress charts
-- [ ] Daily reminders and notifications
-- [ ] Cloud sync across devices
+* [x] Streak tracking
+* [x] Habit completion history (Time Matrix)
+* [x] Export / Import habit data (Custom `.trackify` format)
+* [x] Theme mode and accent color customization
+* [x] OTA GitHub Update Checker
+* [ ] Habit statistics and progress charts
+* [ ] Daily reminders and notifications
+* [ ] Cloud sync across devices
 
 ## 👤 About
 

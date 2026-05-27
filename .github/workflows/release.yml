@@ -130,27 +130,21 @@ jobs:
       
       - name: Package .deb file
         run: |
-          # 1. Scaffold directories (NO MORE /opt! Only /usr!)
+          # 1. Scaffold directories
           mkdir -p deb-package/usr/lib/trackify
           mkdir -p deb-package/usr/bin
           mkdir -p deb-package/usr/share/applications
-          mkdir -p deb-package/usr/share/icons/hicolor/1024x1024/apps
+          mkdir -p deb-package/usr/share/pixmaps
           mkdir -p deb-package/DEBIAN
 
-          # 2. Copy App Bundle & Icon into /usr/lib and /usr/share
+          # 2. Copy App Bundle & Icon
           cp -R build/linux/x64/release/bundle/* deb-package/usr/lib/trackify/
-          cp assets/icon.png deb-package/usr/share/icons/hicolor/1024x1024/apps/trackify.png
+          cp assets/icon.png deb-package/usr/share/pixmaps/trackify.png
 
           # 3. Create the global system command! 
-          # CHANGED: Using a relative path fixes the "dangling symlink" error!
-          ln -s ../lib/trackify/trackify deb-package/usr/bin/trackify
+          ln -s /usr/lib/trackify/trackify deb-package/usr/bin/trackify
 
-          # 4. Strict Linux Permissions
-          # REMOVED the chmod for the symlink. We only need to chmod the actual app folder!
-          chmod -R 755 deb-package/usr/lib/trackify/
-          chmod 644 deb-package/usr/share/icons/hicolor/1024x1024/apps/trackify.png
-
-          # 5. Create DEBIAN Control File
+          # 4. Create DEBIAN Control File
           cat <<EOF > deb-package/DEBIAN/control
           Package: trackify
           Version: 1.0.0
@@ -161,7 +155,15 @@ jobs:
           Description: Trackify - The Time Matrix. Track your habits beautifully.
           EOF
 
-          # 6. Create Desktop Entry
+          # 5. POST-INSTALL SCRIPT (Forces Linux to refresh cache!)
+          cat <<EOF > deb-package/DEBIAN/postinst
+          #!/bin/sh
+          chmod 755 /usr/lib/trackify/trackify
+          update-desktop-database -q || true
+          gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+          EOF
+
+          # 6. Create Desktop Entry (Dynamic Paths!)
           cat <<EOF > deb-package/usr/share/applications/trackify.desktop
           [Desktop Entry]
           Version=1.0
@@ -173,12 +175,18 @@ jobs:
           Type=Application
           Categories=Utility;Productivity;
           Keywords=Habit;Tracker;Productivity;Flutter;
+          StartupWMClass=com.trackify.app
           EOF
 
-          # FIX MENU PERMISSIONS
+          # 7. STRICT PERMISSION LOCKDOWN
+          chmod 755 deb-package/DEBIAN
+          chmod 644 deb-package/DEBIAN/control
+          chmod 755 deb-package/DEBIAN/postinst
+          chmod -R 755 deb-package/usr/lib/trackify/
+          chmod 644 deb-package/usr/share/pixmaps/trackify.png
           chmod 644 deb-package/usr/share/applications/trackify.desktop
 
-          # 7. Build the package
+          # 8. Build the package
           dpkg-deb --build deb-package trackify-linux-x64.deb
 
       - name: Upload Linux Assets to GitHub Release

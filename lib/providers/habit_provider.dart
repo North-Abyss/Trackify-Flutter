@@ -223,6 +223,12 @@ class HabitProvider extends ChangeNotifier {
     if (changesMade) saveHabits(); 
   }
 
+  // For Clearing All Data (e.g., during testing or if user wants a fresh start):
+  void clearAllData() {
+    _habits.clear();
+    notifyListeners();
+  }
+
   // ==========================================
   // EXPORT / IMPORT LOGIC
   // ==========================================

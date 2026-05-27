@@ -1,25 +1,47 @@
 // lib/screens/settings_screen.dart
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:file_picker/file_picker.dart'; // The new native file explorer package
-import 'dart:convert'; // Needed for utf8 encoding on web exports
-import 'dart:io'; // Needed to read/write the actual file to the hard drive
-//import 'dart:typed_data'; // unnecessary import for web export, foundation.dart already includes it
-import '../providers/theme_provider.dart';
-import '../providers/habit_provider.dart'; // Needed to call import/export
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class SettingsScreen extends StatelessWidget {
+import '../providers/theme_provider.dart';
+import '../providers/habit_provider.dart'; 
+import '../services/backup_service.dart';
+import '../services/update_service.dart';
+
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  final TextEditingController _nameController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _nameController.text = prefs.getString('userName') ?? '';
+    });
+  }
+
+  Future<void> _saveUserName(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userName', name);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // WATCH the theme state
     final themeProvider = context.watch<ThemeProvider>();
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final activeThemeName = themeProvider.activeThemeName;
-    final availableThemes = themeProvider.availableThemes;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -30,8 +52,6 @@ class SettingsScreen extends StatelessWidget {
             padding: EdgeInsets.all(16.0),
             child: Text('Appearance', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ),
-          const Divider(),
-
           ListTile(
             leading: const Icon(Icons.brightness_6),
             title: const Text('Theme Mode'),
@@ -48,16 +68,14 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
           ),
-
           const Divider(),
-
           ListTile(
             leading: const Icon(Icons.color_lens),
             title: const Text('Accent Color'),
             subtitle: const Text('Choose your primary theme color'),
             trailing: DropdownButton<String>(
-              value: activeThemeName,
-              items: availableThemes.map((String themeName) {
+              value: themeProvider.activeThemeName,
+              items: themeProvider.availableThemes.map((String themeName) {
                 return DropdownMenuItem<String>(
                   value: themeName,
                   child: Row(
@@ -80,111 +98,145 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
           ),
-          
-          const Divider(), // A thicker divider between major sections
+          const Divider(thickness: 2),
 
-          // --- DATA MANAGEMENT SECTION ---
+          // --- DATA & STORAGE SECTION (.trackify Backup) ---
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text('Data & Storage', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ),
-          const Divider(),
-
-          // 1. IMPORT BUTTON
           ListTile(
-            leading: const Icon(Icons.file_download),
-            title: const Text('Import Template / Backup'),
-            subtitle: const Text('Load habits from a .json file'),
+            leading: const Icon(Icons.download),
+            title: const Text('Import Backup (.trackify)'),
+            subtitle: const Text('Restore all habits and settings'),
             onTap: () async {
-              // Open native file picker
-              FilePickerResult? result = await FilePicker.pickFiles(
-                type: FileType.custom,
-                allowedExtensions: ['json'], // Only allow json files!
-              );
-
-              if (result != null && result.files.single.path != null) {
-                // Read the file and send it to the Provider
-                File file = File(result.files.single.path!);
-                String jsonString = await file.readAsString();
-                
-                if (context.mounted) {
-                  context.read<HabitProvider>().importFromJson(jsonString);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Habits imported successfully!',
-                      style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
-                      ),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              }
-            },
-          ),
-
-          const Divider(),
-
-          // 2. EXPORT BUTTON
-          ListTile(
-            leading: const Icon(Icons.file_upload),
-            title: const Text('Export Backup'),
-            subtitle: const Text('Save your current habits to a file'),
-            onTap: () async {
-              // 1. Grab the JSON data from the Provider first
-              final jsonString = context.read<HabitProvider>().exportToJson();
-
-              if (kIsWeb) {
-                // --- WEB EXPORT ---
-                // Convert the string to bytes so Chrome can trigger a download
-                final bytes = Uint8List.fromList(utf8.encode(jsonString));
-                
-                await FilePicker.saveFile(
-                  fileName: 'trackify_backup.json',
-                  type: FileType.custom,
-                  allowedExtensions: ['json'],
-                  bytes: bytes, // <-- THE MAGIC FIX FOR WEB!
-                );
-
-                if (!context.mounted) return;
+              bool success = await BackupService.importData();
+              if (success && context.mounted) {
+                // Tell the HabitProvider to reload its data from the freshly overwritten SharedPreferences
+                context.read<HabitProvider>().loadHabits();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Backup downloaded!',
-                      style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
-                    ),
-                    backgroundColor: Colors.green,
-                  ),
+                  const SnackBar(content: Text('Backup Restored!'), backgroundColor: Colors.green),
                 );
-              } else {
-                // --- LINUX / ANDROID EXPORT ---
-                String? outputFile = await FilePicker.saveFile(
-                  dialogTitle: 'Select where to save your backup:',
-                  fileName: 'trackify_backup.json',
-                  type: FileType.custom,
-                  allowedExtensions: ['json'],
-                );
-
-                if (outputFile != null) {
-                  final file = File(outputFile);
-                  await file.writeAsString(jsonString);
-                  
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Backup saved successfully!',
-                        style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
-                      ),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
               }
             },
           ),
-
-
           const Divider(),
+          ListTile(
+            leading: const Icon(Icons.upload),
+            title: const Text('Export Backup (.trackify)'),
+            subtitle: const Text('Save a complete snapshot of your app'),
+            onTap: () async {
+              bool success = await BackupService.exportData();
+              if (success && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Backup Saved!'), backgroundColor: Colors.green),
+                );
+              }
+            },
+          ),
+          const Divider(thickness: 2),
+
+          // --- SYSTEM & ABOUT SECTION ---
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text('System & About', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
+          ListTile(
+            leading: const Icon(Icons.code),
+            title: const Text('View Source Code'),
+            subtitle: const Text('github.com/North-Abyss/Trackify-Flutter'),
+            onTap: () {
+              launchUrl(Uri.parse('https://github.com/North-Abyss/Trackify-Flutter'), mode: LaunchMode.externalApplication);
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.system_update),
+            title: const Text('Check for Updates'),
+            subtitle: const Text('Ping GitHub for the latest release'),
+            onTap: () {
+              UpdateService.checkForUpdates(context);
+            },
+          ),
+          const Divider(),
+          
+          // --- THE DANGER ZONE ---
+          const SizedBox(height: 20),
+          Center( // <-- This is the magic widget that stops it from stretching!
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade900,
+                foregroundColor: Colors.white,
+                // horizontal padding adds breathing room on the left/right of the text
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20), 
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.delete, size: 20),
+              label: const Text(
+                'RESET ALL DATA', 
+                style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 2)
+              ),
+              onPressed: () => _requestMemoryReset(context),
+            ),
+          ),
+          const SizedBox(height: 40),     
+
         ]
       )
+    );
+  }
+
+  // --- DOUBLE CONFIRMATION RESET LOGIC ---
+  void _requestMemoryReset(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Reset Memory?", style: TextStyle(color: Colors.red)),
+        content: const Text("This will delete all your habits, stats, and history. Are you sure?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(
+            child: const Text("Yes, Proceed", style: TextStyle(color: Colors.red)),
+            onPressed: () {
+              Navigator.pop(ctx); 
+              _requestFinalConfirmation(context); 
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _requestFinalConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("FINAL WARNING", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text("This action cannot be undone. All data will be permanently erased."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              // 1. Nuke SharedPreferences
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.clear();
+              
+              // 2. Clear Provider Memory & Rebuild UI
+              if (context.mounted) {
+                context.read<HabitProvider>().clearAllData();
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Memory Wiped.'), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: const Text("CONFIRM RESET", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 }
