@@ -1,5 +1,6 @@
 // lib/services/notification_service.dart
 
+import 'dart:io';
 import 'package:flutter/foundation.dart'; // REQUIRED for kIsWeb
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -9,6 +10,7 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize() async {
+
     // 1. Web handles notifications natively through the browser, no init needed!
     if (kIsWeb) return; 
 
@@ -32,6 +34,7 @@ class NotificationService {
   }
 
   static Future<void> requestPermissions() async {
+
     if (kIsWeb) {
       // Browsers handle permissions automatically when you show the first notification.
       return; 
@@ -46,9 +49,10 @@ class NotificationService {
   }
 
   static Future<void> scheduleDailyReminder() async {
-    // Web browsers cannot schedule local background alarms. Skip gracefully!
-    if (kIsWeb) {
-      debugPrint("Web mode: Skipping background scheduling.");
+    
+    // 1. Web browsers and Desktop OS cannot schedule local background alarms. Skip gracefully!
+    if (kIsWeb || Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      debugPrint("Web/Desktop mode: Skipping background scheduling.");
       return;
     }
 

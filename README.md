@@ -4,6 +4,11 @@ A Flutter habit-tracking application built as a learning project during the **10
 
 ![Social preview](assets/social%20preview.png)
 
+## Demo Video :
+<div align="center" style="display:grid; place-items:center; max-width:760px; margin: 0 auto 1.5rem; padding: 1rem; border: 1px solid #d1d5db; border-radius: 18px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);">
+  <img src="assets/demo.gif" alt="Demo" style="max-width:100%; max-height:420px;" />
+</div>
+
 ## 📱 Features
 
 - **The Time Matrix** - A historical 10-year calendar that visualizes completion history with custom-colored markers.
