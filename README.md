@@ -2,11 +2,16 @@
 
 A Flutter habit-tracking application built as a learning project during the **100 Days of Code challenge**. Trackify helps users build and maintain positive habits by providing a clean, intuitive interface to track daily habit completion. It includes a historical **Time Matrix**, a global cooldown timer engine, and an automated multi-platform CI/CD pipeline.
 
-![Social preview](assets/social%20preview.png)
+**Download Now:** [https://github.com/North-Abyss/Trackify-Flutter/releases/tag/v0.0.0](https://github.com/North-Abyss/Trackify-Flutter/releases/tag/v0.0.0)
+
+<div align=center>
+    <img src=assets/social%20preview.png alt="preview" style="border: 1px solid #f2f2f2;border-radius: 18px;">
+</div>
+
 
 ## Demo Video :
 <div align="center" style="display:grid; place-items:center; max-width:760px; margin: 0 auto 1.5rem; padding: 1rem; border: 1px solid #d1d5db; border-radius: 18px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);">
-  <img src="assets/demo.gif" alt="Demo" style="max-width:100%; max-height:420px;" />
+  <img src="assets/demo.gif" alt="Demo" style="max-width:100%; max-height:520px;" />
 </div>
 
 ## 📱 Features
