@@ -76,3 +76,41 @@ if [[ "$trigger_release" == "y" || "$trigger_release" == "Y" ]]; then
 else
     echo -e "${BLUE}Skipping release. Have a great day!${NC}"
 fi
+
+
+# ==========================================
+# 🌐 GITHUB PAGES WEB DEPLOY
+# ==========================================
+echo -e "${YELLOW}--- Web Deploy (GitHub Pages) ---${NC}"
+read -p "Do you want to build and deploy the Web PWA to GitHub Pages? (y/n): " deploy_web
+
+if [[ "$deploy_web" == "y" || "$deploy_web" == "Y" ]]; then
+    # 1. Capture the remote URL of your repo so we know where to push
+    REMOTE_URL=$(git config --get remote.origin.url)
+    
+    echo -e "${BLUE}Building Flutter Web (this takes a minute)...${NC}"
+    # CRITICAL: The base-href MUST match your GitHub repository name!
+    # Assuming your repo is named Trackify-Flutter
+    flutter build web --release --base-href "/Trackify-Flutter/"
+    
+    echo -e "${BLUE}Pushing compiled web app to 'gh-pages' branch...${NC}"
+    # 2. Go into the compiled web folder
+    cd build/web
+    
+    # 3. Create a temporary git repo just for these compiled files
+    git init
+    git checkout -b gh-pages
+    git add .
+    git commit -m "🚀 Auto-Deploy Web PWA"
+    
+    # 4. Force push ONLY this folder to the gh-pages branch on GitHub
+    git push -f $REMOTE_URL gh-pages
+    
+    # 5. Clean up and return to the main project folder
+    rm -rf .git
+    cd ../..
+    
+    echo -e "${GREEN}Web deployment pushed! Your PWA will be live shortly.${NC}"
+else
+    echo -e "${BLUE}Skipping Web Deploy.${NC}"
+fi
