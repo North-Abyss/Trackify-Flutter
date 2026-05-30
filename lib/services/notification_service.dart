@@ -10,10 +10,11 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize() async {
-
-    // 1. Web handles notifications natively through the browser, no init needed!
-    if (kIsWeb) return; 
-
+    
+    if (kIsWeb || Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      return; // <--- SKIP INITIALIZATION ON DESKTOP
+    }
+    
     // 2. Desktop & Mobile Initialization
     tz.initializeTimeZones();
 
