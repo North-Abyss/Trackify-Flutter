@@ -57,7 +57,7 @@ class MainApp extends StatelessWidget {
               }
 
               return MaterialApp(
-                debugShowCheckedModeBanner: false, 
+                debugShowCheckedModeBanner: false, // Remove the debug banner
                 title: 'Trackify', 
                 
                 theme: activeLight, 

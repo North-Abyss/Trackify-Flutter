@@ -34,14 +34,43 @@ flutter:
   # assets:
   #   - assets/custom_theme.json
 
+# flutter_launcher_icons:
+#   android: "launcher_icon"
+#   ios: true
+#   image_path: "assets/icon.png"
+#   min_sdk_android: 21 
+#   web:
+#     generate: true
+#     image_path: "assets/icon.png"
+#   windows:
+#     generate: true
+#     image_path: "assets/icon.png"
+#   macos:
+#     generate: true
+#     image_path: "assets/icon.png"
+
 flutter_launcher_icons:
-  android: "launcher_icon"
+  android: true
   ios: true
   image_path: "assets/icon.png"
-  min_sdk_android: 21 
+  
+  # Android Adaptive Icon settings (Injects the #e3e3e3 background)
+  adaptive_icon_background: "#e3e3e3"
+  adaptive_icon_foreground: "assets/icon.png"
+  min_sdk_android: 21
+  
+  # iOS settings (Forces the background color since iOS blocks transparency)
+  remove_alpha_ios: true
+  background_color_ios: "#e3e3e3"
+  
+  # Web PWA config
   web:
     generate: true
     image_path: "assets/icon.png"
+    background_color: "#e3e3e3"
+    theme_color: "#e3e3e3"
+    
+  # Desktop config
   windows:
     generate: true
     image_path: "assets/icon.png"

@@ -9,7 +9,7 @@ class ThemeProvider extends ChangeNotifier {
 
   // The clean, lightweight Material 3 seed palette!
   final Map<String, Color> _predefinedThemes = {
-    "Dynamic": Colors.deepPurple, // The perfect default for M3
+    "Dynamic": Colors.lightBlue, // The perfect default for M3
     "Ocean Blue": Colors.blue,
     "Forest Green": Colors.green,
     "Deep Purple": Colors.purple,
